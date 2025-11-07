@@ -1,6 +1,8 @@
 package main
 
 import (
+	math "github.com/chewxy/math32"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -79,9 +81,27 @@ func main() {
 	object2 := createCubeObject(rl.NewVector3(2, 0, -3), 1, 1, 1)
 
 	// conn.Write([]byte("hello"))
+	rl.HideCursor()
+	centerx := rl.GetScreenWidth() / 2
+	centery := rl.GetScreenHeight() / 2
+	cameraRotationx := float32(0)
+	cameraRotationy := float32(0)
+
 	moving := &player
 	waspressed := false
 	for !rl.WindowShouldClose() {
+		deltaMouse := rl.GetMousePosition()
+
+		cameraRotationx += (deltaMouse.X - float32(centerx)) / 100
+		cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100
+
+		target := rl.Vector3{X: float32(math.Sin(cameraRotationy) * math.Cos(cameraRotationx)),
+			Z: float32(math.Sin(cameraRotationy) * math.Sin(cameraRotationx)),
+			Y: float32(math.Cos(cameraRotationy))}
+		target = rl.Vector3Normalize(target)
+		target = rl.Vector3Add(target, camera.Position)
+		camera.Target = target
+		rl.SetMousePosition(centerx, centery)
 
 		// input := ""
 		velocity := rl.Vector3{}
