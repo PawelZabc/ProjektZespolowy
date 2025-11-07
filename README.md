@@ -11,6 +11,8 @@ go run .
 
 
 ### Ideas
+Hitscan na sprawdzanie z czym moze interaktować grać
+Wskazywanie w którą strone ma wypychać ściana/podłogo
 
 
 ### To figure out later
