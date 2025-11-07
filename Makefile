@@ -24,11 +24,13 @@ run: run-client
 
 run-client:
 	@echo "Running client..."
-	cd $(CLIENT_PATH) && $(GO) run .
+	cd $(CLIENT_PATH)
+	$(GO) run .
 
 run-server:
 	@echo "Running server..."
-	cd $(SERVER_PATH) && $(GO) run .
+	cd $(SERVER_PATH)
+	$(GO) run .
 
 
 build: clean build-client build-server
@@ -56,7 +58,7 @@ build-macos:
 
 clean:
 	@echo "Cleaning..."
-	rm -rf $(BUILD_DIR)
+	rm -R $(BUILD_DIR)
 
 # For windows later
 # clean:
