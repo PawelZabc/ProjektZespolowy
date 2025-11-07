@@ -8,12 +8,14 @@ For now
 cd client
 go run .
 ```
-
+or, if you have `make` installed
+```bash
+make
+```
 
 ### Ideas
-Hitscan na sprawdzanie z czym moze interaktować grać
-
-Wskazywanie w którą strone ma wypychać ściana/podłogo
+- Hitscan na sprawdzanie z czym moze interaktować grać
+- Wskazywanie w którą strone ma wypychać ściana/podłogo
 
 
 ### To figure out later
