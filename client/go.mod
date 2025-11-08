@@ -1,4 +1,4 @@
-module client
+module github.com/PawelZabc/ProjektZespolowy/client
 
 go 1.24.0
 
