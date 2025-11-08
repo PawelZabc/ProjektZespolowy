@@ -1,71 +1,72 @@
-
 APP_NAME := ray-game
 CLIENT_PATH := ./client
 SERVER_PATH := ./server
 BUILD_DIR := ./bin
 GO := go
+ARCH := amd64
 
-OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
-ARCH := amd64 
+# OS detection
+ifeq ($(OS),Windows_NT)
+	DETECTED_OS := windows
+	RM := rmdir /S /Q
+	MKDIR := if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+	EXE := .exe
+	GOOS := windows
+else
+	DETECTED_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+	RM := rm -rf
+	MKDIR := mkdir -p $(BUILD_DIR)
+	EXE :=
+	GOOS := linux
+endif
 
-# All commands
 .PHONY: all run build clean run-client run-server build-client build-server
 
 # Default target
 all: run
 
-# For later dev (maybe for fix and esspecialy for Windoze)
-# run: 
-# 	run-server
-# 	sleep 1
-# 	run-client
-
+# Run targets
 run: run-client
 
 run-client:
-	@echo "Running client..."
-	cd $(CLIENT_PATH)
-	$(GO) run .
+	@echo "Running $(APP_NAME)/client on $(DETECTED_OS)"
+	cd $(CLIENT_PATH) && $(GO) run .
 
 run-server:
-	@echo "Running server..."
-	cd $(SERVER_PATH)
-	$(GO) run .
+	@echo "Running server on $(DETECTED_OS)"
+	cd $(SERVER_PATH) && $(GO) run .
 
+run-both:
+	@echo "Running both client and server..."
+	@$(MAKE) run-server & $(MAKE) run-client
 
+# Build targets
 build: clean build-client build-server
 
 build-client:
-	@echo "Building client..."
-	$(GO) build -o $(BUILD_DIR)/$(APP_NAME)-client $(CLIENT_PATH)
+	@echo "Building client for $(GOOS)/$(ARCH)..."
+	@$(MKDIR)
+	cd $(CLIENT_PATH) && GOOS=$(GOOS) GOARCH=$(ARCH) $(GO) build -o ../$(BUILD_DIR)/$(APP_NAME)-client$(EXE) .
 
 build-server:
-	@echo "Building server..."
-	$(GO) build -o $(BUILD_DIR)/$(APP_NAME)-server $(SERVER_PATH)
+	@echo "Building server for $(GOOS)/$(ARCH)..."
+	@$(MKDIR)
+	cd $(SERVER_PATH) && GOOS=$(GOOS) GOARCH=$(ARCH) $(GO) build -o ../$(BUILD_DIR)/$(APP_NAME)-server$(EXE) .
 
+# Cross-compilation targets
 build-windows:
 	@echo "Building for Windows..."
-	GOOS=windows GOARCH=$(ARCH) $(GO) build -o $(BUILD_DIR)/$(APP_NAME)-client.exe $(CLIENT_PATH)
-	GOOS=windows GOARCH=$(ARCH) $(GO) build -o $(BUILD_DIR)/$(APP_NAME)-server.exe $(SERVER_PATH)
+	@$(MKDIR)
+	cd $(CLIENT_PATH) && GOOS=windows GOARCH=$(ARCH) $(GO) build -o ../$(BUILD_DIR)/$(APP_NAME)-client.exe .
+	cd $(SERVER_PATH) && GOOS=windows GOARCH=$(ARCH) $(GO) build -o ../$(BUILD_DIR)/$(APP_NAME)-server.exe .
 
 build-linux:
-	GOOS=linux GOARCH=$(ARCH) $(GO) build -o $(BUILD_DIR)/$(APP_NAME)-client $(CLIENT_PATH)
-	GOOS=linux GOARCH=$(ARCH) $(GO) build -o $(BUILD_DIR)/$(APP_NAME)-server $(SERVER_PATH)
+	@echo "Building for Linux..."
+	@$(MKDIR)
+	cd $(CLIENT_PATH) && GOOS=linux GOARCH=$(ARCH) $(GO) build -o ../$(BUILD_DIR)/$(APP_NAME)-client .
+	cd $(SERVER_PATH) && GOOS=linux GOARCH=$(ARCH) $(GO) build -o ../$(BUILD_DIR)/$(APP_NAME)-server .
 
-build-macos:
-	GOOS=darwin GOARCH=$(ARCH) $(GO) build -o $(BUILD_DIR)/$(APP_NAME)-client $(CLIENT_PATH)
-	GOOS=darwin GOARCH=$(ARCH) $(GO) build -o $(BUILD_DIR)/$(APP_NAME)-server $(SERVER_PATH)
-
+# Clean
 clean:
 	@echo "Cleaning..."
-	rm -R $(BUILD_DIR)
-
-# For windows later
-# clean:
-# 	del /Q bin\*.exe 2>nul || true
-
-# dev-client:
-# 	reflex -r '\.go$$' -- sh -c 'cd $(CLIENT_PATH) && $(GO) run .'
-
-# dev-server:
-# 	reflex -r '\.go$$' -- sh -c 'cd $(SERVER_PATH) && $(GO) run .'
+	-@$(RM) $(BUILD_DIR) 2>/dev/null || true
