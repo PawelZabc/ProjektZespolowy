@@ -12,12 +12,14 @@ ifeq ($(OS),Windows_NT)
 	MKDIR := if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
 	EXE := .exe
 	GOOS := windows
+	TAGS := ""
 else
 	DETECTED_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 	RM := rm -rf
 	MKDIR := mkdir -p $(BUILD_DIR)
 	EXE :=
 	GOOS := linux
+	TAGS := "x11"
 endif
 
 .PHONY: all run build clean run-client run-server build-client build-server
@@ -30,7 +32,7 @@ run: run-client
 
 run-client:
 	@echo "Running $(APP_NAME)/client on $(DETECTED_OS)"
-	cd $(CLIENT_PATH) && $(GO) run .
+	cd $(CLIENT_PATH) && $(GO) run -tags $(TAGS) .
 
 run-server:
 	@echo "Running server on $(DETECTED_OS)"
@@ -46,7 +48,7 @@ build: clean build-client build-server
 build-client:
 	@echo "Building client for $(GOOS)/$(ARCH)..."
 	@$(MKDIR)
-	cd $(CLIENT_PATH) && GOOS=$(GOOS) GOARCH=$(ARCH) $(GO) build -o ../$(BUILD_DIR)/$(APP_NAME)-client$(EXE) .
+	cd $(CLIENT_PATH) && GOOS=$(GOOS) GOARCH=$(ARCH) $(GO) build -tags $(TAGS) -o ../$(BUILD_DIR)/$(APP_NAME)-client$(EXE) .
 
 build-server:
 	@echo "Building server for $(GOOS)/$(ARCH)..."
@@ -63,7 +65,7 @@ build-windows:
 build-linux:
 	@echo "Building for Linux..."
 	@$(MKDIR)
-	cd $(CLIENT_PATH) && GOOS=linux GOARCH=$(ARCH) $(GO) build -o ../$(BUILD_DIR)/$(APP_NAME)-client .
+	cd $(CLIENT_PATH) && GOOS=linux GOARCH=$(ARCH) $(GO) build -tags $(TAGS) -o ../$(BUILD_DIR)/$(APP_NAME)-client .
 	cd $(SERVER_PATH) && GOOS=linux GOARCH=$(ARCH) $(GO) build -o ../$(BUILD_DIR)/$(APP_NAME)-server .
 
 # Clean
