@@ -1,4 +1,4 @@
-package main
+package entities
 
 import rl "github.com/gen2brain/raylib-go/raylib"
 

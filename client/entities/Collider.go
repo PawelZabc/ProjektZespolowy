@@ -1,4 +1,4 @@
-package main
+package entities
 
 import (
 	math "github.com/chewxy/math32"

@@ -1,11 +1,11 @@
-package main
+package entities
 
 import rl "github.com/gen2brain/raylib-go/raylib"
 
 func LoadModel(name string) rl.Model {
-	model := rl.LoadModel("assets/" + name + ".glb")
+	model := rl.LoadModel("assets/models/" + name + ".glb")
 
-	shader := rl.LoadShader("lighting.vs", "lighting.fs")
+	shader := rl.LoadShader("assets/shaders/lighting.vs", "assets/shaders/lighting.fs")
 
 	model.Materials.Shader = shader
 
@@ -21,7 +21,7 @@ func LoadModel(name string) rl.Model {
 	return model
 }
 
-func createCylinderObject(position rl.Vector3, radius float32, height float32) Object {
+func CreateCylinderObject(position rl.Vector3, radius float32, height float32) Object {
 	object := Object{Collider: &CylinderCollider{
 		Position: position,
 		Radius:   radius,
@@ -31,7 +31,7 @@ func createCylinderObject(position rl.Vector3, radius float32, height float32) O
 	object.Model.Transform = rl.MatrixScale(radius, height, radius)
 	return object
 }
-func createCubeObject(position rl.Vector3, sizeX float32, sizeY float32, sizeZ float32) Object {
+func CreateCubeObject(position rl.Vector3, sizeX float32, sizeY float32, sizeZ float32) Object {
 	object := Object{Collider: &CubeCollider{
 		Position: position,
 		SizeX:    sizeX,

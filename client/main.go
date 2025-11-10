@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/PawelZabc/ProjektZespolowy/client/entities"
+
 	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -72,13 +74,13 @@ func main() {
 	// 	}
 	// }()
 
-	player := createCylinderObject(rl.NewVector3(-2, 0, 0), 0.5, 1)
+	player := entities.CreateCylinderObject(rl.NewVector3(-2, 0, 0), 0.5, 1)
 
-	object := createCylinderObject(rl.NewVector3(2, 0, 0), 0.5, 1)
+	object := entities.CreateCylinderObject(rl.NewVector3(2, 0, 0), 0.5, 1)
 
-	player2 := createCubeObject(rl.NewVector3(-2, 0, -3), 1, 1, 1)
+	player2 := entities.CreateCubeObject(rl.NewVector3(-2, 0, -3), 1, 1, 1)
 
-	object2 := createCubeObject(rl.NewVector3(2, 0, -3), 1, 1, 1)
+	object2 := entities.CreateCubeObject(rl.NewVector3(2, 0, -3), 1, 1, 1)
 
 	// conn.Write([]byte("hello"))
 	rl.HideCursor()
