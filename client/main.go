@@ -142,9 +142,11 @@ func main() {
 		if moving.Collider.CollidesWith(object.Collider) {
 			println("cylinder collision")
 		}
+		moving.Collider.PushbackFrom(object.Collider)
 		if moving.Collider.CollidesWith(object2.Collider) {
 			println("cube collision")
 		}
+		moving.Collider.PushbackFrom(object2.Collider)
 
 		// if input != "" {
 		// 	_, err = conn.Write([]byte(input))
