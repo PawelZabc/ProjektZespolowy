@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/PawelZabc/ProjektZespolowy/client/entities"
 
+	"github.com/PawelZabc/ProjektZespolowy/client/config"
 	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -49,7 +50,7 @@ func main() {
 		Position:   rl.NewVector3(0, 4.0, 4.0),
 		Target:     rl.NewVector3(0.0, 1.0, 0.0),
 		Up:         rl.NewVector3(0.0, 1.0, 0.0),
-		Fovy:       45.0,
+		Fovy:       config.CameraFov,
 		Projection: rl.CameraPerspective,
 	}
 
@@ -74,79 +75,97 @@ func main() {
 	// 	}
 	// }()
 
+	objects := make([]*entities.Object, 20)
+
 	player := entities.CreateCylinderObject(rl.NewVector3(-2, 0, 0), 0.5, 1)
-
-	object := entities.CreateCylinderObject(rl.NewVector3(2, 0, 0), 0.5, 1)
-
-	player2 := entities.CreateCubeObject(rl.NewVector3(-2, 0, -3), 1, 1, 1)
-
+	object := entities.CreateCylinderObject(rl.NewVector3(2, 5, 0), 0.5, 1)
+	objects = append(objects, &object)
 	object2 := entities.CreateCubeObject(rl.NewVector3(2, 0, -3), 1, 1, 1)
-
+	objects = append(objects, &object2)
+	floor := entities.CreateCubeObject(rl.NewVector3(-20, -1, -20), 40, 1, 40)
+	objects = append(objects, &floor)
 	// conn.Write([]byte("hello"))
 	rl.HideCursor()
 	centerx := rl.GetScreenWidth() / 2
 	centery := rl.GetScreenHeight() / 2
 	cameraRotationx := float32(0)
-	cameraRotationy := float32(0)
+	cameraRotationy := float32(-math.Pi / 2)
+	gravity := float32(0.005)
+	isOnFloor := false
+	velocity := rl.Vector3{}
+	rl.SetMousePosition(centerx, centery)
 
-	moving := &player
-	waspressed := false
+	// moving := &player
+	// waspressed := false
 	for !rl.WindowShouldClose() {
 		deltaMouse := rl.GetMousePosition()
 
-		cameraRotationx += (deltaMouse.X - float32(centerx)) / 100
-		cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100
+		cameraRotationx += (deltaMouse.X - float32(centerx)) / 100 * config.CameraSensivity
+		cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100 * config.CameraSensivity
+		if cameraRotationy > config.CameraLockMax {
+			cameraRotationy = config.CameraLockMax
+		} else if cameraRotationy < config.CameraLockMin {
+			cameraRotationy = config.CameraLockMin
+		}
+		println(cameraRotationy)
 
+		// input := ""
+		velocity.X = 0
+		velocity.Z = 0
+		movement := rl.Vector2{}
+		if rl.IsKeyDown(rl.KeyW) {
+			movement = rl.Vector2Add(movement, rl.NewVector2(0.1, 0))
+		}
+		if rl.IsKeyDown(rl.KeyS) {
+			movement = rl.Vector2Add(movement, rl.NewVector2(-0.1, 0))
+		}
+		if rl.IsKeyDown(rl.KeyA) {
+			movement = rl.Vector2Add(movement, rl.NewVector2(0, -0.1))
+		}
+		if rl.IsKeyDown(rl.KeyD) {
+			movement = rl.Vector2Add(movement, rl.NewVector2(0, 0.1))
+		}
+
+		if rl.IsKeyDown(rl.KeySpace) && isOnFloor {
+			velocity.Y = 0.1
+		}
+		movement = rl.Vector2Normalize(movement)
+		movement = rl.Vector2Rotate(movement, cameraRotationx)
+		movement = rl.Vector2Scale(movement, -0.1)
+		velocity.Y -= gravity
+		velocity = rl.Vector3Add(velocity, rl.NewVector3(movement.X, 0, movement.Y))
+
+		// if rl.IsKeyDown(rl.KeyE) && !waspressed {
+		// 	waspressed = true
+		// 	if moving == &player {
+		// 		moving = &player2
+		// 	} else {
+		// 		moving = &player
+		// 	}
+		// }
+		// if rl.IsKeyReleased(rl.KeyE) {
+		// 	waspressed = false
+		// }
+
+		player.Collider.AddPosition(velocity)
+		isOnFloor = false
+		for _, obj := range objects {
+			if obj != nil {
+				if player.Collider.CollidesWith(obj.Collider) {
+					isOnFloor = true
+					velocity.Y = 0
+				}
+				player.Collider.PushbackFrom(obj.Collider)
+			}
+		}
 		target := rl.Vector3{X: float32(math.Sin(cameraRotationy) * math.Cos(cameraRotationx)),
 			Z: float32(math.Sin(cameraRotationy) * math.Sin(cameraRotationx)),
 			Y: float32(math.Cos(cameraRotationy))}
 		target = rl.Vector3Normalize(target)
+		camera.Position = rl.Vector3Add(player.Collider.GetPosition(), rl.NewVector3(0, 0.5, 0))
 		target = rl.Vector3Add(target, camera.Position)
 		camera.Target = target
 		rl.SetMousePosition(centerx, centery)
-
-		// input := ""
-		velocity := rl.Vector3{}
-		if rl.IsKeyDown(rl.KeyW) {
-			velocity = rl.Vector3Add(velocity, rl.NewVector3(0, 0, -0.1))
-		}
-		if rl.IsKeyDown(rl.KeyS) {
-			velocity = rl.Vector3Add(velocity, rl.NewVector3(0, 0, 0.1))
-		}
-		if rl.IsKeyDown(rl.KeyA) {
-			velocity = rl.Vector3Add(velocity, rl.NewVector3(-0.1, 0, 0))
-		}
-		if rl.IsKeyDown(rl.KeyD) {
-			velocity = rl.Vector3Add(velocity, rl.NewVector3(0.1, 0, 0))
-		}
-		if rl.IsKeyDown(rl.KeyLeftShift) {
-			velocity = rl.Vector3Add(velocity, rl.NewVector3(0, -0.1, 0))
-		}
-		if rl.IsKeyDown(rl.KeySpace) {
-			velocity = rl.Vector3Add(velocity, rl.NewVector3(0, 0.1, 0))
-		}
-
-		if rl.IsKeyDown(rl.KeyE) && !waspressed {
-			waspressed = true
-			if moving == &player {
-				moving = &player2
-			} else {
-				moving = &player
-			}
-		}
-		if rl.IsKeyReleased(rl.KeyE) {
-			waspressed = false
-		}
-
-		moving.Collider.AddPosition(velocity)
-		if moving.Collider.CollidesWith(object.Collider) {
-			println("cylinder collision")
-		}
-		moving.Collider.PushbackFrom(object.Collider)
-		if moving.Collider.CollidesWith(object2.Collider) {
-			println("cube collision")
-		}
-		moving.Collider.PushbackFrom(object2.Collider)
 
 		// if input != "" {
 		// 	_, err = conn.Write([]byte(input))
@@ -173,10 +192,12 @@ func main() {
 
 		rl.BeginMode3D(camera)
 
-		rl.DrawModel(player.Model, player.Collider.GetPosition(), 1.0, rl.White)
-		rl.DrawModel(object.Model, object.Collider.GetPosition(), 1.0, rl.White)
-		rl.DrawModel(player2.Model, player2.Collider.GetPosition(), 1.0, rl.White)
-		rl.DrawModel(object2.Model, object2.Collider.GetPosition(), 1.0, rl.White)
+		for _, obj := range objects {
+			if obj != nil {
+				rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
+			}
+
+		}
 		rl.DrawGrid(10, 1.0)
 
 		rl.EndMode3D()
