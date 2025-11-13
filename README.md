@@ -16,6 +16,9 @@ make
 ### Ideas
 - Hitscan na sprawdzanie z czym moze interaktować grać
 - Wskazywanie w którą strone ma wypychać ściana/podłogo
+- Mapa(słownik) pokoji z obiektami które są w środku dla bardziej wydajnej kolizji
+- Enum kierunków
+- Code cleanup (w main.go)
 
 
 ### To figure out later
