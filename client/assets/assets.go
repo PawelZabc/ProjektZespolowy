@@ -1,8 +1,3 @@
-// =============================================================================
-// File: client/assets/assets.go
-// Simple filesystem-based asset manager with autocompletion support
-// =============================================================================
-
 package assets
 
 import (
@@ -17,7 +12,8 @@ import (
 
 const assetsBasePath = "client/assets"
 
-// AssetManager handles all game assets
+var Manager *AssetManager
+
 type AssetManager struct {
 	Models   map[string]rl.Model
 	Textures map[string]rl.Texture2D
@@ -27,7 +23,6 @@ type AssetManager struct {
 	Shaders  map[string]rl.Shader
 }
 
-// NewAssetManager creates a new asset manager instance
 func NewAssetManager() *AssetManager {
 	return &AssetManager{
 		Models:   make(map[string]rl.Model),
@@ -39,18 +34,8 @@ func NewAssetManager() *AssetManager {
 	}
 }
 
-// Global instance for easy access
-var Global *AssetManager
-
-// Init initializes the global asset manager
-func Init() error {
-	Global = NewAssetManager()
-	return nil
-}
-
-// LoadModel loads a model from disk
 func (am *AssetManager) LoadModel(filename string) (rl.Model, error) {
-	// Check cache
+	// cache
 	if model, exists := am.Models[filename]; exists {
 		return model, nil
 	}
@@ -66,9 +51,8 @@ func (am *AssetManager) LoadModel(filename string) (rl.Model, error) {
 	return model, nil
 }
 
-// LoadTexture loads a texture from disk
 func (am *AssetManager) LoadTexture(filename string) (rl.Texture2D, error) {
-	// Check cache
+
 	if texture, exists := am.Textures[filename]; exists {
 		return texture, nil
 	}
@@ -102,9 +86,7 @@ func (am *AssetManager) LoadSound(filename string) (rl.Sound, error) {
 	return sound, nil
 }
 
-// LoadMusic loads music from disk
 func (am *AssetManager) LoadMusic(filename string) (rl.Music, error) {
-	// Check cache
 	if music, exists := am.Music[filename]; exists {
 		return music, nil
 	}

@@ -1,4 +1,3 @@
-// tools/assetgen/main.go
 package main
 
 import (
@@ -9,7 +8,6 @@ import (
 	"strings"
 	"text/template"
 	"time"
-	"unicode"
 )
 
 //go:embed template.go.tmpl
@@ -24,7 +22,6 @@ type AssetCategory struct {
 type Asset struct {
 	ConstName string // MODEL_PLAYER
 	Filename  string // player.glb
-	Comment   string // Player model
 }
 
 type TemplateData struct {
@@ -37,16 +34,16 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("✓ Generated assets_gen.go successfully")
+	fmt.Println("Generated assets_gen.go successfully")
 }
 
-// findAssetsPath searches for the client/assets directory
+// When dev wants to run generate from client or from root
+// TODO: Fix later to make possible run from client or just adjust makefile
 func findAssetsPath() string {
-	// Try different relative paths
 	possiblePaths := []string{
-		"../../client/assets", // From tools/assetgen/
-		"client/assets",       // From project root
-		"assets",              // From client/
+		"../assets",
+		"client/assets", // From project root
+		"assets",        // From client/
 	}
 
 	for _, path := range possiblePaths {
@@ -60,21 +57,18 @@ func findAssetsPath() string {
 }
 
 func generate() error {
-	// Find assets directory - try relative paths from tools/assetgen/
 	assetsPath := findAssetsPath()
 	if assetsPath == "" {
-		return fmt.Errorf("could not find client/assets directory")
+		return fmt.Errorf("could not find assets directory")
 	}
 
-	fmt.Printf("Found assets directory: %s\n", assetsPath)
-
-	// Define asset categories and their directories
 	categories := []struct {
 		name string
 		dir  string
 	}{
 		{"Models", "models"},
-		{"Textures", "graphics"},
+		{"Textures", "textures"},
+		{"Images", "images"},
 		{"Sounds", "audio"},
 		{"Fonts", "fonts"},
 		{"Shaders", "shaders"},
@@ -82,11 +76,9 @@ func generate() error {
 
 	var assetCategories []AssetCategory
 
-	// Scan each directory
 	for _, cat := range categories {
 		dirPath := filepath.Join(assetsPath, cat.dir)
 
-		// Check if directory exists
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			fmt.Printf("Directory not found: %s (skipping)\n", dirPath)
 			continue
@@ -155,18 +147,16 @@ func scanDirectory(dirPath, categoryName string) ([]Asset, error) {
 
 		filename := entry.Name()
 
-		// Skip hidden files and non-asset files
+		// Skip hidden files
 		if strings.HasPrefix(filename, ".") {
 			continue
 		}
 
 		constName := generateConstName(categoryName, filename)
-		comment := generateComment(filename)
 
 		assets = append(assets, Asset{
 			ConstName: constName,
 			Filename:  filename,
-			Comment:   comment,
 		})
 	}
 
@@ -174,10 +164,9 @@ func scanDirectory(dirPath, categoryName string) ([]Asset, error) {
 }
 
 func generateConstName(category, filename string) string {
-	// Remove extension
 	name := strings.TrimSuffix(filename, filepath.Ext(filename))
 
-	// Convert to PascalCase
+	// create parts from string, split by interpunction
 	parts := strings.FieldsFunc(name, func(r rune) bool {
 		return r == '_' || r == '-' || r == ' ' || r == '.'
 	})
@@ -194,22 +183,9 @@ func generateConstName(category, filename string) string {
 		}
 	}
 
-	return result.String()
-}
-
-func generateComment(filename string) string {
-	name := strings.TrimSuffix(filename, filepath.Ext(filename))
-
-	// Convert to readable format
-	name = strings.ReplaceAll(name, "_", " ")
-	name = strings.ReplaceAll(name, "-", " ")
-
-	// Capitalize first letter
-	if len(name) > 0 {
-		runes := []rune(name)
-		runes[0] = unicode.ToUpper(runes[0])
-		name = string(runes)
+	if filepath.Ext(filename) == ".vs" || filepath.Ext(filename) == ".fs" {
+		result.WriteString(strings.ToTitle(filepath.Ext(filename)[1:]))
 	}
 
-	return name
+	return result.String()
 }
