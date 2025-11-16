@@ -30,7 +30,7 @@ all: run
 # Run targets
 run: run-client
 
-run-client:
+run-client: run-generate
 	@echo "Running $(APP_NAME)/client on $(DETECTED_OS)"
 	cd $(CLIENT_PATH) && $(GO) run -tags $(TAGS) .
 
@@ -41,6 +41,10 @@ run-server:
 run-both:
 	@echo "Running both client and server..."
 	@$(MAKE) run-server & $(MAKE) run-client
+
+run-generate:
+	@echo "Generating asset names in ./client/assets"
+	cd $(CLIENT_PATH) && $(GO) generate
 
 # Build targets
 build: clean build-client build-server
