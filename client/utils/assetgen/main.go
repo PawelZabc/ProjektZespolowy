@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-	"time"
 )
 
 //go:embed template.go.tmpl
@@ -25,7 +24,6 @@ type Asset struct {
 }
 
 type TemplateData struct {
-	Timestamp  string
 	Categories []AssetCategory
 }
 
@@ -41,7 +39,7 @@ func main() {
 // TODO: Fix later to make possible run from client or just adjust makefile
 func findAssetsPath() string {
 	possiblePaths := []string{
-		"../assets",
+		"../assets",     // this is working when click 'go generate' in assets.go
 		"client/assets", // From project root
 		"assets",        // From client/
 	}
@@ -69,7 +67,7 @@ func generate() error {
 		{"Models", "models"},
 		{"Textures", "textures"},
 		{"Images", "images"},
-		{"Sounds", "audio"},
+		{"Audio", "audio"},
 		{"Fonts", "fonts"},
 		{"Shaders", "shaders"},
 	}
@@ -99,7 +97,6 @@ func generate() error {
 		}
 	}
 
-	// Load template
 	tmplContent, err := templateFS.ReadFile("template.go.tmpl")
 	if err != nil {
 		return fmt.Errorf("failed to read template: %w", err)
@@ -110,13 +107,10 @@ func generate() error {
 		return fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	// Prepare template data
 	data := TemplateData{
-		Timestamp:  time.Now().Format(time.RFC3339),
 		Categories: assetCategories,
 	}
 
-	// Create output file
 	outputPath := filepath.Join(assetsPath, "assets_gen.go")
 	outFile, err := os.Create(outputPath)
 	if err != nil {
@@ -124,7 +118,6 @@ func generate() error {
 	}
 	defer outFile.Close()
 
-	// Execute template
 	if err := tmpl.Execute(outFile, data); err != nil {
 		return fmt.Errorf("failed to execute template: %w", err)
 	}
