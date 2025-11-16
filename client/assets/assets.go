@@ -2,315 +2,311 @@ package assets
 
 import (
 	"fmt"
+	"log"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-//go:generate go run ../utils/assetgen/main.go
+const assetsBasePath = "assets"
 
-const assetsBasePath = "client/assets"
+type Resource[T any] struct{ Data T }
 
-var Manager *AssetManager
+type ResourceLoader[T any] struct {
+	Load   func(path string) (T, error)
+	Unload func(T)
+}
+
+type ResourceCache[T any] struct {
+	loader ResourceLoader[T]
+	items  map[string]*Resource[T]
+	mu     sync.RWMutex
+}
+
+func NewResourceCache[T any](loader ResourceLoader[T]) *ResourceCache[T] {
+	return &ResourceCache[T]{loader: loader, items: make(map[string]*Resource[T])}
+}
+
+func (c *ResourceCache[T]) Load(key string) (*Resource[T], error) {
+	c.mu.RLock()
+	if r, ok := c.items[key]; ok {
+		c.mu.RUnlock()
+		return r, nil
+	}
+	c.mu.RUnlock()
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	val, err := c.loader.Load(key)
+	log.Println("Here in Generic Load")
+	if err != nil {
+		return nil, err
+	}
+
+	res := &Resource[T]{Data: val}
+	c.items[key] = res
+	return res, nil
+}
+
+func (c *ResourceCache[T]) Get(key string) (*Resource[T], bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	r, ok := c.items[key]
+	return r, ok
+}
+
+func (c *ResourceCache[T]) Reload(key string) error {
+	c.mu.RLock()
+	old, ok := c.items[key]
+	c.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("asset not loaded: %s", key)
+	}
+
+	newVal, err := c.loader.Load(key)
+	if err != nil {
+		return err
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.loader.Unload(old.Data)
+	old.Data = newVal
+	return nil
+}
+
+func (c *ResourceCache[T]) Unload(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if r, ok := c.items[key]; ok {
+		c.loader.Unload(r.Data)
+		delete(c.items, key)
+	}
+}
+
+func (c *ResourceCache[T]) Clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for k, r := range c.items {
+		c.loader.Unload(r.Data)
+		delete(c.items, k)
+	}
+}
 
 type AssetManager struct {
-	Models   map[string]rl.Model
-	Textures map[string]rl.Texture2D
-	Sounds   map[string]rl.Sound
-	Music    map[string]rl.Music
-	Fonts    map[string]rl.Font
-	Shaders  map[string]rl.Shader
+	models   *ResourceCache[rl.Model]
+	textures *ResourceCache[rl.Texture2D]
+	images   *ResourceCache[rl.Image]
+	sounds   *ResourceCache[rl.Sound]
+	music    *ResourceCache[rl.Music]
+	fonts    *ResourceCache[rl.Font]
+	shaders  *ResourceCache[rl.Shader]
+}
+
+var GlobalManager *AssetManager
+
+func Init() {
+	GlobalManager = NewAssetManager()
 }
 
 func NewAssetManager() *AssetManager {
-	return &AssetManager{
-		Models:   make(map[string]rl.Model),
-		Textures: make(map[string]rl.Texture2D),
-		Sounds:   make(map[string]rl.Sound),
-		Music:    make(map[string]rl.Music),
-		Fonts:    make(map[string]rl.Font),
-		Shaders:  make(map[string]rl.Shader),
-	}
+	am := &AssetManager{}
+
+	// Here is the set of actual loading functions, those are used by generic ResourceCache.Load() method
+
+	am.models = NewResourceCache(ResourceLoader[rl.Model]{
+		Load: func(key string) (rl.Model, error) {
+			path := filepath.Join(assetsBasePath, "models", key)
+			m := rl.LoadModel(path)
+			if m.MeshCount == 0 {
+				return rl.Model{}, fmt.Errorf("failed to load model: %s", key)
+			}
+			return m, nil
+		},
+		Unload: func(m rl.Model) { rl.UnloadModel(m) },
+	})
+
+	am.textures = NewResourceCache(ResourceLoader[rl.Texture2D]{
+		Load: func(key string) (rl.Texture2D, error) {
+			path := filepath.Join(assetsBasePath, "graphics", key)
+			tex := rl.LoadTexture(path)
+			if tex.ID == 0 {
+				return rl.Texture2D{}, fmt.Errorf("failed to load texture: %s", key)
+			}
+			return tex, nil
+		},
+		Unload: func(t rl.Texture2D) { rl.UnloadTexture(t) },
+	})
+
+	am.images = NewResourceCache(ResourceLoader[rl.Image]{
+		Load: func(key string) (rl.Image, error) {
+			path := filepath.Join(assetsBasePath, "graphics", key)
+			img := rl.LoadImage(path)
+			if img.Data == nil {
+				return rl.Image{}, fmt.Errorf("failed to load image: %s", key)
+			}
+			return *img, nil
+		},
+		Unload: func(i rl.Image) { rl.UnloadImage(&i) },
+	})
+
+	am.sounds = NewResourceCache(ResourceLoader[rl.Sound]{
+		Load: func(key string) (rl.Sound, error) {
+			path := filepath.Join(assetsBasePath, "audio", key)
+			s := rl.LoadSound(path)
+			// Note: raylib Sound detection differs; check Stream.Buffer or ID fields as needed
+			return s, nil
+		},
+		Unload: func(s rl.Sound) { rl.UnloadSound(s) },
+	})
+
+	am.music = NewResourceCache(ResourceLoader[rl.Music]{
+		Load: func(key string) (rl.Music, error) {
+			path := filepath.Join(assetsBasePath, "audio", key)
+			m := rl.LoadMusicStream(path)
+			return m, nil
+		},
+		Unload: func(m rl.Music) { rl.UnloadMusicStream(m) },
+	})
+
+	am.fonts = NewResourceCache(ResourceLoader[rl.Font]{
+		Load: func(key string) (rl.Font, error) {
+			parts := strings.SplitN(key, ":", 2)
+			path := filepath.Join(assetsBasePath, "fonts", parts[0])
+			size := int32(16) // default size, TODO: create a const for that
+			if len(parts) == 2 {
+				var s int
+				fmt.Sscanf(parts[1], "%d", &s)
+				size = int32(s)
+			}
+			f := rl.LoadFontEx(path, size, nil, 0)
+			if f.Texture.ID == 0 {
+				return rl.Font{}, fmt.Errorf("failed to load font: %s", key)
+			}
+			return f, nil
+		},
+		Unload: func(f rl.Font) { rl.UnloadFont(f) },
+	})
+
+	am.shaders = NewResourceCache(ResourceLoader[rl.Shader]{
+		Load: func(key string) (rl.Shader, error) {
+			parts := strings.SplitN(key, "|", 2)
+			if len(parts) != 2 {
+				return rl.Shader{}, fmt.Errorf("invalid shader key: %s", key)
+			}
+			vs := filepath.Join(assetsBasePath, "shaders", parts[0])
+			fs := filepath.Join(assetsBasePath, "shaders", parts[1])
+			s := rl.LoadShader(vs, fs)
+			if s.ID == 0 {
+				return rl.Shader{}, fmt.Errorf("failed to load shader: %s", key)
+			}
+			return s, nil
+		},
+		Unload: func(s rl.Shader) { rl.UnloadShader(s) },
+	})
+
+	return am
 }
 
-func (am *AssetManager) LoadModel(filename string) (rl.Model, error) {
-	// cache
-	if model, exists := am.Models[filename]; exists {
-		return model, nil
-	}
+// Model wrappers
 
-	path := filepath.Join(assetsBasePath, "models", filename)
-	model := rl.LoadModel(path)
+func (am *AssetManager) LoadModel(filename string) (*Resource[rl.Model], error) {
+	return am.models.Load(filename)
+}
+func (am *AssetManager) GetModel(filename string) (*Resource[rl.Model], bool) {
+	return am.models.Get(filename)
+}
+func (am *AssetManager) ReloadModel(filename string) error { return am.models.Reload(filename) }
+func (am *AssetManager) UnloadModel(filename string)       { am.models.Unload(filename) }
 
-	if model.MeshCount == 0 {
-		return rl.Model{}, fmt.Errorf("failed to load model: %s", filename)
-	}
+// Texture wrappers
 
-	am.Models[filename] = model
-	return model, nil
+func (am *AssetManager) LoadTexture(filename string) (*Resource[rl.Texture2D], error) {
+	return am.textures.Load(filename)
+}
+func (am *AssetManager) GetTexture(filename string) (*Resource[rl.Texture2D], bool) {
+	return am.textures.Get(filename)
+}
+func (am *AssetManager) ReloadTexture(filename string) error { return am.textures.Reload(filename) }
+func (am *AssetManager) UnloadTexture(filename string)       { am.textures.Unload(filename) }
+
+// Image wrappers
+
+func (am *AssetManager) LoadImage(filename string) (*Resource[rl.Image], error) {
+	return am.images.Load(filename)
+}
+func (am *AssetManager) GetImage(filename string) (*Resource[rl.Image], bool) {
+	return am.images.Get(filename)
+}
+func (am *AssetManager) ReloadImage(filename string) error { return am.images.Reload(filename) }
+func (am *AssetManager) UnloadImage(filename string)       { am.images.Unload(filename) }
+
+// Sound wrappers
+
+func (am *AssetManager) LoadSound(filename string) (*Resource[rl.Sound], error) {
+	return am.sounds.Load(filename)
+}
+func (am *AssetManager) GetSound(filename string) (*Resource[rl.Sound], bool) {
+	return am.sounds.Get(filename)
+}
+func (am *AssetManager) ReloadSound(filename string) error { return am.sounds.Reload(filename) }
+func (am *AssetManager) UnloadSound(filename string)       { am.sounds.Unload(filename) }
+
+// Music wrappers
+
+func (am *AssetManager) LoadMusic(filename string) (*Resource[rl.Music], error) {
+	return am.music.Load(filename)
+}
+func (am *AssetManager) GetMusic(filename string) (*Resource[rl.Music], bool) {
+	return am.music.Get(filename)
+}
+func (am *AssetManager) ReloadMusic(filename string) error { return am.music.Reload(filename) }
+func (am *AssetManager) UnloadMusic(filename string)       { am.music.Unload(filename) }
+
+// Font wrappers
+
+func (am *AssetManager) LoadFont(filename string, size int) (*Resource[rl.Font], error) {
+	key := fmt.Sprintf("%s:%d", filename, size)
+	return am.fonts.Load(key)
+}
+func (am *AssetManager) GetFont(filename string, size int) (*Resource[rl.Font], bool) {
+	key := fmt.Sprintf("%s:%d", filename, size)
+	return am.fonts.Get(key)
+}
+func (am *AssetManager) ReloadFont(filename string, size int) error {
+	key := fmt.Sprintf("%s:%d", filename, size)
+	return am.fonts.Reload(key)
+}
+func (am *AssetManager) UnloadFont(filename string, size int) {
+	key := fmt.Sprintf("%s:%d", filename, size)
+	am.fonts.Unload(key)
 }
 
-func (am *AssetManager) LoadTexture(filename string) (rl.Texture2D, error) {
+// Shader wrappers
 
-	if texture, exists := am.Textures[filename]; exists {
-		return texture, nil
-	}
-
-	path := filepath.Join(assetsBasePath, "graphics", filename)
-	texture := rl.LoadTexture(path)
-
-	if texture.ID == 0 {
-		return rl.Texture2D{}, fmt.Errorf("failed to load texture: %s", filename)
-	}
-
-	am.Textures[filename] = texture
-	return texture, nil
+func (am *AssetManager) LoadShader(vsFile, fsFile string) (*Resource[rl.Shader], error) {
+	key := vsFile + "|" + fsFile
+	return am.shaders.Load(key)
 }
-
-// LoadSound loads a sound from disk
-func (am *AssetManager) LoadSound(filename string) (rl.Sound, error) {
-	// Check cache
-	if sound, exists := am.Sounds[filename]; exists {
-		return sound, nil
-	}
-
-	path := filepath.Join(assetsBasePath, "audio", filename)
-	sound := rl.LoadSound(path)
-
-	if sound.Stream.Buffer == nil {
-		return rl.Sound{}, fmt.Errorf("failed to load sound: %s", filename)
-	}
-
-	am.Sounds[filename] = sound
-	return sound, nil
+func (am *AssetManager) GetShader(vsFile, fsFile string) (*Resource[rl.Shader], bool) {
+	return am.shaders.Get(vsFile + "|" + fsFile)
 }
-
-func (am *AssetManager) LoadMusic(filename string) (rl.Music, error) {
-	if music, exists := am.Music[filename]; exists {
-		return music, nil
-	}
-
-	path := filepath.Join(assetsBasePath, "audio", filename)
-	music := rl.LoadMusicStream(path)
-
-	if music.Stream.Buffer == nil {
-		return rl.Music{}, fmt.Errorf("failed to load music: %s", filename)
-	}
-
-	am.Music[filename] = music
-	return music, nil
+func (am *AssetManager) ReloadShader(vsFile, fsFile string) error {
+	return am.shaders.Reload(vsFile + "|" + fsFile)
 }
+func (am *AssetManager) UnloadShader(vsFile, fsFile string) { am.shaders.Unload(vsFile + "|" + fsFile) }
 
-// LoadFont loads a font from disk
-func (am *AssetManager) LoadFont(filename string, fontSize int32) (rl.Font, error) {
-	cacheKey := fmt.Sprintf("%s_%d", filename, fontSize)
-
-	// Check cache
-	if font, exists := am.Fonts[cacheKey]; exists {
-		return font, nil
-	}
-
-	path := filepath.Join(assetsBasePath, "fonts", filename)
-	font := rl.LoadFontEx(path, fontSize, nil, 0)
-
-	if font.Texture.ID == 0 {
-		return rl.Font{}, fmt.Errorf("failed to load font: %s", filename)
-	}
-
-	am.Fonts[cacheKey] = font
-	return font, nil
-}
-
-// LoadShader loads a shader from disk
-func (am *AssetManager) LoadShader(vsFilename, fsFilename string) (rl.Shader, error) {
-	cacheKey := vsFilename + "|" + fsFilename
-
-	// Check cache
-	if shader, exists := am.Shaders[cacheKey]; exists {
-		return shader, nil
-	}
-
-	vsPath := filepath.Join(assetsBasePath, "shaders", vsFilename)
-	fsPath := filepath.Join(assetsBasePath, "shaders", fsFilename)
-
-	shader := rl.LoadShader(vsPath, fsPath)
-
-	if shader.ID == 0 {
-		return rl.Shader{}, fmt.Errorf("failed to load shader: %s, %s", vsFilename, fsFilename)
-	}
-
-	am.Shaders[cacheKey] = shader
-	return shader, nil
-}
-
-// GetModel returns a cached model or error if not loaded
-func (am *AssetManager) GetModel(filename string) (rl.Model, bool) {
-	model, exists := am.Models[filename]
-	return model, exists
-}
-
-// GetTexture returns a cached texture or error if not loaded
-func (am *AssetManager) GetTexture(filename string) (rl.Texture2D, bool) {
-	texture, exists := am.Textures[filename]
-	return texture, exists
-}
-
-// GetSound returns a cached sound or error if not loaded
-func (am *AssetManager) GetSound(filename string) (rl.Sound, bool) {
-	sound, exists := am.Sounds[filename]
-	return sound, exists
-}
-
-// Unload frees all loaded assets
-func (am *AssetManager) Unload() {
-	for _, model := range am.Models {
-		rl.UnloadModel(model)
-	}
-	for _, texture := range am.Textures {
-		rl.UnloadTexture(texture)
-	}
-	for _, sound := range am.Sounds {
-		rl.UnloadSound(sound)
-	}
-	for _, music := range am.Music {
-		rl.UnloadMusicStream(music)
-	}
-	for _, font := range am.Fonts {
-		rl.UnloadFont(font)
-	}
-	for _, shader := range am.Shaders {
-		rl.UnloadShader(shader)
-	}
-
-	// Clear maps
-	am.Models = make(map[string]rl.Model)
-	am.Textures = make(map[string]rl.Texture2D)
-	am.Sounds = make(map[string]rl.Sound)
-	am.Music = make(map[string]rl.Music)
-	am.Fonts = make(map[string]rl.Font)
-	am.Shaders = make(map[string]rl.Shader)
-}
-
-// UnloadModel unloads a specific model from cache
-func (am *AssetManager) UnloadModel(filename string) {
-	if model, exists := am.Models[filename]; exists {
-		rl.UnloadModel(model)
-		delete(am.Models, filename)
-	}
-}
-
-// UnloadTexture unloads a specific texture from cache
-func (am *AssetManager) UnloadTexture(filename string) {
-	if texture, exists := am.Textures[filename]; exists {
-		rl.UnloadTexture(texture)
-		delete(am.Textures, filename)
-	}
-}
-
-// Helper function to get file extension
-func getExtension(filename string) string {
-	ext := filepath.Ext(filename)
-	if len(ext) > 0 && ext[0] == '.' {
-		ext = ext[1:]
-	}
-	return strings.ToLower(ext)
-}
-
-// PreloadAssets loads multiple assets at once with error reporting
-func (am *AssetManager) PreloadAssets(
-	models []string,
-	textures []string,
-	sounds []string,
-) []error {
-	var errors []error
-
-	for _, filename := range models {
-		if _, err := am.LoadModel(filename); err != nil {
-			errors = append(errors, fmt.Errorf("model %s: %w", filename, err))
-		}
-	}
-
-	for _, filename := range textures {
-		if _, err := am.LoadTexture(filename); err != nil {
-			errors = append(errors, fmt.Errorf("texture %s: %w", filename, err))
-		}
-	}
-
-	for _, filename := range sounds {
-		if _, err := am.LoadSound(filename); err != nil {
-			errors = append(errors, fmt.Errorf("sound %s: %w", filename, err))
-		}
-	}
-
-	return errors
-}
-
-// =============================================================================
-// Asset Groups for organized loading
-// =============================================================================
-
-// AssetGroup represents a named group of assets
-type AssetGroup struct {
-	Name     string
-	Models   []string
-	Textures []string
-	Sounds   []string
-	Music    []string
-}
-
-// LoadGroup loads all assets in a group
-func (am *AssetManager) LoadGroup(group AssetGroup) []error {
-	var errors []error
-
-	for _, filename := range group.Models {
-		if _, err := am.LoadModel(filename); err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	for _, filename := range group.Textures {
-		if _, err := am.LoadTexture(filename); err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	for _, filename := range group.Sounds {
-		if _, err := am.LoadSound(filename); err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	for _, filename := range group.Music {
-		if _, err := am.LoadMusic(filename); err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	return errors
-}
-
-// UnloadGroup unloads all assets in a group
-func (am *AssetManager) UnloadGroup(group AssetGroup) {
-	for _, filename := range group.Models {
-		am.UnloadModel(filename)
-	}
-
-	for _, filename := range group.Textures {
-		am.UnloadTexture(filename)
-	}
-
-	for _, filename := range group.Sounds {
-		if sound, exists := am.Sounds[filename]; exists {
-			rl.UnloadSound(sound)
-			delete(am.Sounds, filename)
-		}
-	}
-
-	for _, filename := range group.Music {
-		if music, exists := am.Music[filename]; exists {
-			rl.UnloadMusicStream(music)
-			delete(am.Music, filename)
-		}
-	}
+// Clears managers cache
+func (am *AssetManager) ClearAll() {
+	am.models.Clear()
+	am.textures.Clear()
+	am.images.Clear()
+	am.sounds.Clear()
+	am.music.Clear()
+	am.fonts.Clear()
+	am.shaders.Clear()
 }
