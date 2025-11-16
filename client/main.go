@@ -26,7 +26,7 @@ func init() {
 	assets.Init()
 }
 
-//go:generate go run ../utils/assetgen/main.go
+//go:generate go run ./utils/assetgen/main.go
 
 func main() {
 	// serverIP := flag.String("ip", "127.0.0.1", "Server IP address")
