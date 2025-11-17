@@ -142,8 +142,3 @@ func (c *CubeCollider) PushbackFromCylinder(cylinder *CylinderCollider) types.Di
 	}
 
 }
-
-func (c *CubeCollider) MoveAndPushback(velocity rl.Vector3, collider Collider) rl.Vector3 {
-
-	return velocity
-}
