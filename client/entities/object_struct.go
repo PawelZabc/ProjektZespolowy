@@ -1,9 +1,12 @@
 package entities
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 type Object struct {
-	Collider Collider
+	Collider types.Collider
 	Model    rl.Model
 }
 

@@ -13,7 +13,7 @@ type CylinderCollider struct {
 	Height   float32
 }
 
-func (c CylinderCollider) CollidesWith(c2 Collider) bool {
+func (c CylinderCollider) CollidesWith(c2 types.Collider) bool {
 	if cylinder, ok := c2.(*CylinderCollider); ok {
 		if rl.Vector2Distance(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
 			rl.Vector2{X: cylinder.Position.X, Y: cylinder.Position.Z}) < (c.Radius+cylinder.Radius) &&
@@ -45,7 +45,7 @@ func (c *CylinderCollider) AddPosition(vec rl.Vector3) {
 	c.Position = rl.Vector3Add(c.Position, vec)
 }
 
-func (c *CylinderCollider) PushbackFrom(c2 Collider) types.Direction {
+func (c *CylinderCollider) PushbackFrom(c2 types.Collider) types.Direction {
 	if cylinder, ok := c2.(*CylinderCollider); ok {
 		return c.PushbackFromCylinder(cylinder)
 
