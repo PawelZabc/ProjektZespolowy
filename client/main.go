@@ -152,7 +152,7 @@ func main() {
 		isOnFloor = false
 		for _, obj := range objects {
 			if obj != nil {
-				if player.Collider.PushbackFrom(obj.Collider) == types.Yminus {
+				if player.Collider.PushbackFrom(obj.Collider) == types.DirYminus {
 					isOnFloor = true
 					velocity.Y = 0
 				}

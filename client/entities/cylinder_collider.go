@@ -53,7 +53,7 @@ func (c *CylinderCollider) PushbackFrom(c2 types.Collider) types.Direction {
 		return c.PushbackFromCube(cube)
 	}
 
-	return types.None
+	return types.DirNone
 
 }
 
@@ -69,17 +69,17 @@ func (c *CylinderCollider) PushbackFromCube(cube *CubeCollider) types.Direction 
 		if distanceXZ > distanceY1 && distanceXZ > distanceY2 {
 			forceXZ := rl.Vector2Scale(rl.Vector2Normalize(diffrence), -distanceXZ)
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(forceXZ.X, 0, forceXZ.Y))
-			return types.XZ
+			return types.DirXZ
 
 		} else if distanceY1 > distanceY2 {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
-			return -types.Y
+			return -types.DirY
 		} else {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
-			return types.Y
+			return types.DirY
 		}
 	} else {
-		return types.None
+		return types.DirNone
 	}
 
 }
@@ -95,18 +95,18 @@ func (c *CylinderCollider) PushbackFromCylinder(cylinder *CylinderCollider) type
 		if distanceXZ > distanceY1 && distanceXZ > distanceY2 {
 			forceXZ := rl.Vector2Scale(rl.Vector2Normalize(diffrence), -distanceXZ)
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(forceXZ.X, 0, forceXZ.Y))
-			return types.XZ
+			return types.DirXZ
 
 		} else if distanceY1 > distanceY2 {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
-			return -types.Y
+			return -types.DirY
 		} else {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
-			return types.Y
+			return types.DirY
 		}
 
 	} else {
-		return types.None
+		return types.DirNone
 	}
 
 }
