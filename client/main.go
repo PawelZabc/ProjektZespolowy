@@ -2,9 +2,9 @@ package main
 
 import (
 	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
-	"github.com/PawelZabc/ProjektZespolowy/client/entities"
-
+	"github.com/PawelZabc/ProjektZespolowy/client/assets"
 	"github.com/PawelZabc/ProjektZespolowy/client/config"
+	"github.com/PawelZabc/ProjektZespolowy/client/entities"
 	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -22,6 +22,12 @@ type Data struct {
 	Z     float32 `json:"z"`
 	Frame int32   `json:"frame"`
 }
+
+func init() {
+	assets.Init()
+}
+
+//go:generate go run ./utils/assetgen/main.go
 
 func main() {
 	// serverIP := flag.String("ip", "127.0.0.1", "Server IP address")
