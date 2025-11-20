@@ -1,6 +1,7 @@
 package main
 
 import (
+	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
 	"github.com/PawelZabc/ProjektZespolowy/client/entities"
 
 	"github.com/PawelZabc/ProjektZespolowy/client/config"
@@ -107,7 +108,7 @@ func main() {
 		} else if cameraRotationy < config.CameraLockMin {
 			cameraRotationy = config.CameraLockMin
 		}
-		println(cameraRotationy)
+		// println(cameraRotationy)
 
 		// input := ""
 		velocity.X = 0
@@ -151,11 +152,10 @@ func main() {
 		isOnFloor = false
 		for _, obj := range objects {
 			if obj != nil {
-				if player.Collider.CollidesWith(obj.Collider) {
+				if player.Collider.PushbackFrom(obj.Collider) == types.DirYminus {
 					isOnFloor = true
 					velocity.Y = 0
 				}
-				player.Collider.PushbackFrom(obj.Collider)
 			}
 		}
 		target := rl.Vector3{X: float32(math.Sin(cameraRotationy) * math.Cos(cameraRotationx)),
@@ -173,6 +173,10 @@ func main() {
 		// 		fmt.Println("Send error:", err)
 		// 	}
 		// }
+
+		// println(player.Collider.GetPosition().Y)
+		// println(types.Xminus)
+		// println(-types.X)
 
 		if rl.IsKeyDown(rl.KeyUp) {
 			camera.Target.Y += 0.1
