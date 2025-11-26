@@ -48,9 +48,10 @@ func (c *CylinderCollider) AddPosition(vec rl.Vector3) {
 func (c *CylinderCollider) PushbackFrom(c2 types.Collider) types.Direction {
 	if cylinder, ok := c2.(*CylinderCollider); ok {
 		return c.PushbackFromCylinder(cylinder)
-
 	} else if cube, ok := c2.(*CubeCollider); ok {
 		return c.PushbackFromCube(cube)
+	} else if plane, ok := c2.(*PlaneCollider); ok {
+		return c.PushbackFromPlane(plane)
 	}
 
 	return types.DirNone
@@ -81,6 +82,62 @@ func (c *CylinderCollider) PushbackFromCube(cube *CubeCollider) types.Direction 
 	} else {
 		return types.DirNone
 	}
+
+}
+
+func (c *CylinderCollider) PushbackFromPlane(plane *PlaneCollider) types.Direction {
+
+	switch plane.Direction {
+	case types.DirX, types.DirXminus, types.DirZ, types.DirZminus:
+		{
+			var diffrence rl.Vector2
+			if plane.Direction == types.DirZ || plane.Direction == types.DirZminus {
+				diffrence = rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
+					rl.Vector2{X: math.Min(plane.Position.X+plane.Width, math.Max(plane.Position.X, c.Position.X)),
+						Y: plane.Position.Z,
+					})
+			} else {
+				diffrence = rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
+					rl.Vector2{X: plane.Position.X,
+						Y: math.Min(plane.Position.Z+plane.Width, math.Max(plane.Position.Z, c.Position.Z)),
+					})
+			}
+			distanceXZ := rl.Vector2Length(diffrence) - (c.Radius)
+			distanceY1 := c.Position.Y - (plane.Position.Y + plane.Height)
+			distanceY2 := plane.Position.Y - (c.Position.Y + c.Height)
+
+			if distanceXZ <= 0 && distanceY1 <= 0 && distanceY2 <= 0 {
+
+				forceXZ := rl.Vector2Scale(rl.Vector2Normalize(diffrence), -distanceXZ)
+				c.Position = rl.Vector3Add(c.Position, rl.NewVector3(forceXZ.X, 0, forceXZ.Y))
+				return -plane.Direction
+			}
+		}
+	case types.DirY, types.DirYminus:
+		{
+			diffrence := rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
+				rl.Vector2{X: math.Min(plane.Position.X+plane.Width, math.Max(plane.Position.X, c.Position.X)),
+					Y: math.Min(plane.Position.Z+plane.Height, math.Max(plane.Position.Z, c.Position.Z))})
+			distanceXZ := rl.Vector2Length(diffrence) - (c.Radius)
+			distanceY1 := c.Position.Y - plane.Position.Y
+			distanceY2 := plane.Position.Y - (c.Position.Y + c.Height)
+			if distanceXZ <= 0 && distanceY1 <= 0 && distanceY2 <= 0 {
+				if plane.Direction == -types.DirY {
+					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
+					return types.DirY
+				} else {
+					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
+					return -types.DirY
+				}
+			}
+
+		}
+		// default:
+		// 	{
+		// 		return types.DirNone
+		// 	}
+	}
+	return types.DirNone
 
 }
 
