@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
 	"github.com/PawelZabc/ProjektZespolowy/client/assets"
 	"github.com/PawelZabc/ProjektZespolowy/client/config"
@@ -84,12 +82,12 @@ func main() {
 	// 	}
 	// }()
 
-	objects := make([]*entities.Object, 20)
+	objects := []*entities.Object{}
 
 	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1)
 
-	// object := entities.CreateCylinderObject(rl.NewVector3(2, 2, 0), 0.5, 1)
-	// objects = append(objects, &object)
+	object := entities.CreateCylinderObject(rl.NewVector3(1, 1, 0), 0.5, 1)
+	objects = append(objects, &object)
 	object2 := entities.CreateCubeObject(rl.NewVector3(-3, 0, 6), 6, 1, 2)
 	objects = append(objects, &object2)
 	floor := entities.CreatePlaneObject(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
@@ -126,6 +124,7 @@ func main() {
 		{Value: -5, Axis: types.DirZ},
 	}
 	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), changes, 3)...)
+	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
 
 	// conn.Write([]byte("hello"))
 	rl.HideCursor()
@@ -203,16 +202,21 @@ func main() {
 				}
 			}
 		}
+
 		target := rl.Vector3{X: float32(math.Sin(cameraRotationy) * math.Cos(cameraRotationx)),
 			Z: float32(math.Sin(cameraRotationy) * math.Sin(cameraRotationx)),
 			Y: float32(math.Cos(cameraRotationy))}
 		target = rl.Vector3Normalize(target)
+
 		camera.Position = rl.Vector3Add(player.Collider.GetPosition(), rl.NewVector3(0, 0.5, 0))
+		playerRay := entities.Ray{Origin: camera.Position, Direction: target}
 		target = rl.Vector3Add(target, camera.Position)
 		camera.Target = target
 		rl.SetMousePosition(centerx, centery)
 
-		fmt.Println(player.Collider.GetPosition())
+		// point, _ := playerRay.GetCollisionPoint(objects[3].Collider)
+		// fmt.Println(objects[3].Collider)
+		// fmt.Println(player.Collider.GetPosition())
 		// if input != "" {
 		// 	_, err = conn.Write([]byte(input))
 		// 	if err != nil {
@@ -237,10 +241,28 @@ func main() {
 			camera.Target.X += 0.1
 		}
 
+		var pointPosition *rl.Vector3 = nil
+		var minLength = float32(0)
+		for _, obj := range objects {
+			if obj != nil {
+				point, length := playerRay.GetCollisionPoint(obj.Collider)
+				if point != nil {
+					if minLength == 0 || length < minLength {
+						minLength = length
+						pointPosition = point
+					}
+				}
+			}
+		}
+
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
 
 		rl.BeginMode3D(camera)
+
+		if pointPosition != nil {
+			rl.DrawModel(pointObject.Model, rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05)), 1.0, rl.Black)
+		}
 
 		for _, obj := range objects {
 			if obj != nil {
@@ -270,7 +292,7 @@ func main() {
 			}
 
 		}
-		rl.DrawGrid(10, 1.0)
+		// rl.DrawGrid(10, 1.0)
 
 		rl.EndMode3D()
 		rl.DrawText("Collision demo", 10, 10, 20, rl.Black)
