@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
 	"github.com/PawelZabc/ProjektZespolowy/client/assets"
 	"github.com/PawelZabc/ProjektZespolowy/client/config"
@@ -84,18 +86,52 @@ func main() {
 
 	objects := make([]*entities.Object, 20)
 
-	player := entities.CreateCylinderObject(rl.NewVector3(-2, 0, 0), 0.5, 1)
-	object := entities.CreateCylinderObject(rl.NewVector3(2, 5, 0), 0.5, 1)
-	objects = append(objects, &object)
-	object2 := entities.CreateCubeObject(rl.NewVector3(2, 0, -3), 1, 1, 1)
+	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1)
+
+	// object := entities.CreateCylinderObject(rl.NewVector3(2, 2, 0), 0.5, 1)
+	// objects = append(objects, &object)
+	object2 := entities.CreateCubeObject(rl.NewVector3(-3, 0, 6), 6, 1, 2)
 	objects = append(objects, &object2)
-	floor := entities.CreateCubeObject(rl.NewVector3(-20, -1, -20), 40, 1, 40)
+	floor := entities.CreatePlaneObject(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
 	objects = append(objects, &floor)
+	ceiling := entities.CreatePlaneObject(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
+	objects = append(objects, &ceiling)
+	// points := []rl.Vector2{
+	// 	rl.NewVector2(-10, -10),
+	// 	rl.NewVector2(-10, 10),
+	// 	rl.NewVector2(10, 10),
+	// 	rl.NewVector2(10, -10),
+	// 	rl.NewVector2(-10, -10)}
+	// objects = append(objects, entities.CreateRoomWallsFromPoints(points, 0, 3)...)
+	changes := []entities.Change{
+		{Value: 20, Axis: types.DirX},
+		{Value: 5, Axis: types.DirZ},
+		{Value: 5, Axis: types.DirX},
+		{Value: -5, Axis: types.DirZ},
+		{Value: 10, Axis: types.DirX},
+		{Value: 30, Axis: types.DirZ},
+		{Value: -10, Axis: types.DirX},
+		{Value: -20, Axis: types.DirZ},
+		{Value: -5, Axis: types.DirX},
+		{Value: 10, Axis: types.DirZ},
+		{Value: -20, Axis: types.DirX},
+		{Value: -10, Axis: types.DirZ},
+		{Value: -5, Axis: types.DirX},
+		{Value: 20, Axis: types.DirZ},
+		{Value: -10, Axis: types.DirX},
+		{Value: -30, Axis: types.DirZ},
+		{Value: 10, Axis: types.DirX},
+		{Value: 5, Axis: types.DirZ},
+		{Value: 5, Axis: types.DirX},
+		{Value: -5, Axis: types.DirZ},
+	}
+	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), changes, 3)...)
+
 	// conn.Write([]byte("hello"))
 	rl.HideCursor()
 	centerx := rl.GetScreenWidth() / 2
 	centery := rl.GetScreenHeight() / 2
-	cameraRotationx := float32(0)
+	cameraRotationx := float32(-math.Pi / 2)
 	cameraRotationy := float32(-math.Pi / 2)
 	gravity := float32(0.005)
 	isOnFloor := false
@@ -134,7 +170,7 @@ func main() {
 		}
 
 		if rl.IsKeyDown(rl.KeySpace) && isOnFloor {
-			velocity.Y = 0.1
+			velocity.Y = 0.2
 		}
 		movement = rl.Vector2Normalize(movement)
 		movement = rl.Vector2Rotate(movement, cameraRotationx)
@@ -158,8 +194,11 @@ func main() {
 		isOnFloor = false
 		for _, obj := range objects {
 			if obj != nil {
-				if player.Collider.PushbackFrom(obj.Collider) == types.DirYminus {
+				direction := player.Collider.PushbackFrom(obj.Collider)
+				if direction == types.DirYminus {
 					isOnFloor = true
+					velocity.Y = 0
+				} else if direction == types.DirY {
 					velocity.Y = 0
 				}
 			}
@@ -173,6 +212,7 @@ func main() {
 		camera.Target = target
 		rl.SetMousePosition(centerx, centery)
 
+		fmt.Println(player.Collider.GetPosition())
 		// if input != "" {
 		// 	_, err = conn.Write([]byte(input))
 		// 	if err != nil {
@@ -204,7 +244,29 @@ func main() {
 
 		for _, obj := range objects {
 			if obj != nil {
-				rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
+				if plane, ok := obj.Collider.(*entities.PlaneCollider); ok {
+					switch plane.Direction {
+					case types.DirX:
+						{
+							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Red)
+						}
+					case types.DirY:
+						{
+							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Orange)
+						}
+					case types.DirYminus:
+						{
+							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Green)
+						}
+					case types.DirZ:
+						{
+							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Yellow)
+						}
+					}
+				} else {
+					rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
+				}
+
 			}
 
 		}

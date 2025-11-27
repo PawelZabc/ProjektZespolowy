@@ -8,6 +8,7 @@ const (
 	ModelBarrel2 = "barrel2.glb"
 	ModelCube = "cube.glb"
 	ModelCylinder = "cylinder.glb"
+	ModelPlane = "plane.glb"
 )
 
 // Shaders from shaders/
