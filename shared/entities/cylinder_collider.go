@@ -167,3 +167,11 @@ func (c *CylinderCollider) PushbackFromCylinder(cylinder *CylinderCollider) type
 	}
 
 }
+
+func NewCylinderCollider(position rl.Vector3, radius float32, height float32) *CylinderCollider {
+	return &CylinderCollider{
+		Position: position,
+		Radius:   radius,
+		Height:   height,
+	}
+}

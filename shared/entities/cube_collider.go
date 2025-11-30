@@ -142,3 +142,12 @@ func (c *CubeCollider) PushbackFromCylinder(cylinder *CylinderCollider) types.Di
 	}
 
 }
+
+func NewCubeCollider(position rl.Vector3, sizeX float32, sizeY float32, sizeZ float32) *CubeCollider {
+	return &CubeCollider{
+		Position: position,
+		SizeX:    sizeX,
+		SizeY:    sizeY,
+		SizeZ:    sizeZ,
+	}
+}

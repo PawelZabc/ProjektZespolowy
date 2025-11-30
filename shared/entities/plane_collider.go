@@ -33,4 +33,13 @@ func (p *PlaneCollider) SetPosition(pos rl.Vector3) {
 	p.Position = pos
 }
 
+func NewPlaneCollider(position rl.Vector3, Width float32, Height float32, Direction types.Direction) *PlaneCollider {
+	return &PlaneCollider{
+		Position:  position,
+		Width:     Width,
+		Height:    Height,
+		Direction: Direction,
+	}
+}
+
 var _ types.Collider = (*PlaneCollider)(nil)
