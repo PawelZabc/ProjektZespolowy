@@ -171,3 +171,7 @@ func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height 
 
 	return walls
 }
+
+func GetVector2DXZ(vec rl.Vector3) rl.Vector2 {
+	return rl.NewVector2(vec.X, vec.Z)
+}
