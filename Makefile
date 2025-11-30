@@ -30,6 +30,12 @@ all: run
 # Run targets
 run: run-client
 
+c: run-client
+s: run-server
+
+client: run-client
+server: run-server
+
 run-client: run-generate
 	@echo "Running $(APP_NAME)/client on $(DETECTED_OS)"
 	cd $(CLIENT_PATH) && $(GO) run -tags $(TAGS) .
