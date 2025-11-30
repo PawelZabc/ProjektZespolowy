@@ -1,7 +1,7 @@
 package entities
 
 import (
-	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
+	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
 	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"

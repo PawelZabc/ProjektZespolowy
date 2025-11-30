@@ -1,7 +1,7 @@
 package entities
 
 import (
-	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
+	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
 	math "github.com/chewxy/math32"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -196,4 +196,8 @@ func (r *Ray) GetCollisionPointWithPlane(plane PlaneCollider) (*rl.Vector3, floa
 		}
 	}
 	return nil, 0
+}
+
+func GetVector2DXZ(vec rl.Vector3) rl.Vector2 {
+	return rl.NewVector2(vec.X, vec.Z)
 }

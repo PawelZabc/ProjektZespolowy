@@ -1,10 +1,11 @@
 package main
 
 import (
-	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
 	"github.com/PawelZabc/ProjektZespolowy/client/assets"
 	"github.com/PawelZabc/ProjektZespolowy/client/config"
-	"github.com/PawelZabc/ProjektZespolowy/client/entities"
+	entities "github.com/PawelZabc/ProjektZespolowy/client/entities"
+	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
+	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
 	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -209,7 +210,7 @@ func main() {
 		target = rl.Vector3Normalize(target)
 
 		camera.Position = rl.Vector3Add(player.Collider.GetPosition(), rl.NewVector3(0, 0.5, 0))
-		playerRay := entities.Ray{Origin: camera.Position, Direction: target}
+		playerRay := s_entities.Ray{Origin: camera.Position, Direction: target}
 		target = rl.Vector3Add(target, camera.Position)
 		camera.Target = target
 		rl.SetMousePosition(centerx, centery)
@@ -266,7 +267,7 @@ func main() {
 
 		for _, obj := range objects {
 			if obj != nil {
-				if plane, ok := obj.Collider.(*entities.PlaneCollider); ok {
+				if plane, ok := obj.Collider.(*s_entities.PlaneCollider); ok {
 					switch plane.Direction {
 					case types.DirX:
 						{

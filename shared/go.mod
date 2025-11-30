@@ -1,14 +1,12 @@
-module github.com/PawelZabc/ProjektZespolowy/client
+module github.com/PawelZabc/ProjektZespolowy/shared
 
 go 1.25.4
 
 require (
+	// github.com/PawelZabc/ProjektZespolowy/client v0.0.0-20251130180419-e27124bdb39f
 	github.com/chewxy/math32 v1.11.1
 	github.com/gen2brain/raylib-go/raylib v0.55.1
 )
-
-require github.com/PawelZabc/ProjektZespolowy/shared v0.0.0
-replace github.com/PawelZabc/ProjektZespolowy/shared => ../shared
 
 require (
 	github.com/ebitengine/purego v0.7.1 // indirect
