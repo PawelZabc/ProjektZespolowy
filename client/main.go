@@ -1,12 +1,18 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"net"
+
 	"github.com/PawelZabc/ProjektZespolowy/client/assets"
 	"github.com/PawelZabc/ProjektZespolowy/client/config"
 	entities "github.com/PawelZabc/ProjektZespolowy/client/entities"
 	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
 	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
 	math "github.com/chewxy/math32"
+
+	udp_data "github.com/PawelZabc/ProjektZespolowy/shared/udp_data"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -31,25 +37,25 @@ func init() {
 //go:generate go run ./utils/assetgen/main.go
 
 func main() {
-	// serverIP := flag.String("ip", "127.0.0.1", "Server IP address")
-	// flag.Parse()
+	serverIP := flag.String("ip", "127.0.0.1", "Server IP address")
+	flag.Parse()
 
-	// println(*serverIP)
-	// serverAddr := net.UDPAddr{
-	// 	Port: 9000,
-	// 	IP:   net.ParseIP(*serverIP),
-	// }
+	println(*serverIP)
+	serverAddr := net.UDPAddr{
+		Port: 9000,
+		IP:   net.ParseIP(*serverIP),
+	}
 
-	// localAddr := net.UDPAddr{
-	// 	Port: 0,
-	// 	IP:   net.ParseIP("0.0.0.0"),
-	// }
+	localAddr := net.UDPAddr{
+		Port: 0,
+		IP:   net.ParseIP("0.0.0.0"),
+	}
 
-	// conn, err := net.DialUDP("udp", &localAddr, &serverAddr)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer conn.Close()
+	conn, err := net.DialUDP("udp", &localAddr, &serverAddr)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
 
 	rl.InitWindow(800, 600, "Client: Send Inputs, Receive Position")
 	rl.SetTargetFPS(60)
@@ -127,7 +133,7 @@ func main() {
 	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), changes, 3)...)
 	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
 
-	// conn.Write([]byte("hello"))
+	conn.Write([]byte("hello"))
 	rl.HideCursor()
 	centerx := rl.GetScreenWidth() / 2
 	centery := rl.GetScreenHeight() / 2
@@ -140,6 +146,7 @@ func main() {
 
 	// moving := &player
 	// waspressed := false
+	udpSend := udp_data.ClientData{}
 	for !rl.WindowShouldClose() {
 		deltaMouse := rl.GetMousePosition()
 
@@ -153,24 +160,34 @@ func main() {
 		// println(cameraRotationy)
 
 		// input := ""
+		udpSend = udp_data.ClientData{
+			RotationX: cameraRotationx,
+			RotationY: cameraRotationy,
+			Inputs:    make([]types.PlayerAction, 0, 5),
+		}
 		velocity.X = 0
 		velocity.Z = 0
 		movement := rl.Vector2{}
 		if rl.IsKeyDown(rl.KeyW) {
 			movement = rl.Vector2Add(movement, rl.NewVector2(0.1, 0))
+			udpSend.Inputs = append(udpSend.Inputs, types.MoveForward)
 		}
 		if rl.IsKeyDown(rl.KeyS) {
 			movement = rl.Vector2Add(movement, rl.NewVector2(-0.1, 0))
+			udpSend.Inputs = append(udpSend.Inputs, types.MoveBackward)
 		}
 		if rl.IsKeyDown(rl.KeyA) {
 			movement = rl.Vector2Add(movement, rl.NewVector2(0, -0.1))
+			udpSend.Inputs = append(udpSend.Inputs, types.MoveLeft)
 		}
 		if rl.IsKeyDown(rl.KeyD) {
 			movement = rl.Vector2Add(movement, rl.NewVector2(0, 0.1))
+			udpSend.Inputs = append(udpSend.Inputs, types.MoveRight)
 		}
 
 		if rl.IsKeyDown(rl.KeySpace) && isOnFloor {
 			velocity.Y = 0.2
+			udpSend.Inputs = append(udpSend.Inputs, types.Jump)
 		}
 		movement = rl.Vector2Normalize(movement)
 		movement = rl.Vector2Rotate(movement, cameraRotationx)
@@ -219,28 +236,16 @@ func main() {
 		// fmt.Println(objects[3].Collider)
 		// fmt.Println(player.Collider.GetPosition())
 		// if input != "" {
-		// 	_, err = conn.Write([]byte(input))
-		// 	if err != nil {
-		// 		fmt.Println("Send error:", err)
-		// 	}
+		// fmt.Println(udp_data.DeserializeClientData(udp_data.SerializeClientData(udpSend)))
+		_, err = conn.Write(udp_data.SerializeClientData(udpSend))
+		if err != nil {
+			fmt.Println("Send error:", err)
+		}
 		// }
 
 		// println(player.Collider.GetPosition().Y)
 		// println(types.Xminus)
 		// println(-types.X)
-
-		if rl.IsKeyDown(rl.KeyUp) {
-			camera.Target.Y += 0.1
-		}
-		if rl.IsKeyDown(rl.KeyDown) {
-			camera.Target.Y -= 0.1
-		}
-		if rl.IsKeyDown(rl.KeyLeft) {
-			camera.Target.X -= 0.1
-		}
-		if rl.IsKeyDown(rl.KeyRight) {
-			camera.Target.X += 0.1
-		}
 
 		var pointPosition *rl.Vector3 = nil
 		var minLength = float32(0)

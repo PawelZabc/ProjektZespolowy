@@ -8,6 +8,7 @@ require (
 )
 
 require github.com/PawelZabc/ProjektZespolowy/shared v0.0.0
+
 replace github.com/PawelZabc/ProjektZespolowy/shared => ../shared
 
 require (

@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"strings"
 	"time"
+
+	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
+	udp_data "github.com/PawelZabc/ProjektZespolowy/shared/udp_data"
 )
 
 type Position struct {
@@ -44,8 +46,9 @@ func main() {
 	go func() {
 		buffer := make([]byte, 1024)
 		for {
-			n, clientAddr, err := conn.ReadFromUDP(buffer)
+			_, clientAddr, err := conn.ReadFromUDP(buffer)
 			if err != nil {
+				fmt.Print("error")
 				continue
 			}
 
@@ -54,17 +57,18 @@ func main() {
 				fmt.Println("New client:", clientAddr)
 			}
 
-			input := strings.ToUpper(string(buffer[:n]))
-			fmt.Printf("Received from %v: %s\n", clientAddr, input)
-			for _, char := range input {
-				switch char {
-				case 'W':
+			var data udp_data.ClientData = udp_data.DeserializeClientData(buffer)
+			// input := strings.ToUpper(string(buffer[:n]))
+			fmt.Println("Received from ", clientAddr, data)
+			for _, input := range data.Inputs {
+				switch input {
+				case types.MoveForward:
 					pos.Z -= speed
-				case 'S':
+				case types.MoveBackward:
 					pos.Z += speed
-				case 'A':
+				case types.MoveLeft:
 					pos.X -= speed
-				case 'D':
+				case types.MoveRight:
 					pos.X += speed
 				}
 			}
