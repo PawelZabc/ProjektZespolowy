@@ -1,27 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"time"
 
+	rl "github.com/gen2brain/raylib-go/raylib"
+
 	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
+	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
 	udp_data "github.com/PawelZabc/ProjektZespolowy/shared/udp_data"
 )
-
-type Position struct {
-	X float32 `json:"x"`
-	Y float32 `json:"y"`
-	Z float32 `json:"z"`
-}
-
-type Data struct {
-	X     float32 `json:"x"`
-	Y     float32 `json:"y"`
-	Z     float32 `json:"z"`
-	Frame int32   `json:"frame"`
-}
 
 func main() {
 	addr := net.UDPAddr{
@@ -38,15 +27,21 @@ func main() {
 	fmt.Println("Server listening on port 9000...")
 
 	clients := make(map[string]*net.UDPAddr)
+	floor := s_entities.NewPlaneCollider(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
+	player := s_entities.Player{
+		Velocity: rl.Vector3{},
+		Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 5, 0), 0.5, 1),
+		Speed:    0.1,
+	}
 
-	pos := Position{X: 0, Y: 0, Z: 0}
-	speed := float32(0.1)
-	frame := int32(0)
+	objects := make([]types.Collider, 0, 100)
+	objects = append(objects, floor)
 
 	go func() {
 		buffer := make([]byte, 1024)
 		for {
-			_, clientAddr, err := conn.ReadFromUDP(buffer)
+
+			n, clientAddr, err := conn.ReadFromUDP(buffer)
 			if err != nil {
 				fmt.Print("error")
 				continue
@@ -57,31 +52,64 @@ func main() {
 				fmt.Println("New client:", clientAddr)
 			}
 
-			var data udp_data.ClientData = udp_data.DeserializeClientData(buffer)
-			// input := strings.ToUpper(string(buffer[:n]))
-			fmt.Println("Received from ", clientAddr, data)
+			var data udp_data.ClientData = udp_data.DeserializeClientData(buffer[:n])
+			player.RotationX = data.RotationX
+			player.RotationY = data.RotationY
 			for _, input := range data.Inputs {
 				switch input {
 				case types.MoveForward:
-					pos.Z -= speed
+					player.Movement.Y = 1
 				case types.MoveBackward:
-					pos.Z += speed
+					player.Movement.Y = -1
 				case types.MoveLeft:
-					pos.X -= speed
+					player.Movement.X = 1
 				case types.MoveRight:
-					pos.X += speed
+					player.Movement.X = -1
+				case types.Jump:
+					if player.IsOnFloor {
+						player.Velocity.Y = 0.1
+					}
 				}
 			}
 
 		}
 	}()
 
-	ticker := time.NewTicker(33 * time.Millisecond)
+	gravity := float32(0.005)
+	physicsUpdate := func() {
+		player.Velocity.Y -= gravity
+		player.Move()
+		player.IsOnFloor = false
+		for _, obj := range objects {
+			if obj != nil {
+				direction := player.Collider.PushbackFrom(obj)
+				if direction == types.DirYminus {
+					player.IsOnFloor = true
+					player.Velocity.Y = 0
+				} else if direction == types.DirY {
+					player.Velocity.Y = 0
+				}
+			}
+		}
+		fmt.Println(player.GetPosition())
+
+	}
+
+	go func() {
+		ticker := time.NewTicker(time.Second / 60)
+		for range ticker.C {
+			physicsUpdate()
+		}
+
+	}()
+
+	ticker := time.NewTicker(time.Second / 30)
 	for range ticker.C {
-		frame += 1
-		data, _ := json.Marshal(Data{X: pos.X, Y: pos.Y, Z: pos.Z, Frame: frame})
+		udpSend := udp_data.ServerData{}
+		udpSend.Position = player.GetPosition()
+
 		for _, c := range clients {
-			conn.WriteToUDP(data, c)
+			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), c)
 		}
 	}
 }
