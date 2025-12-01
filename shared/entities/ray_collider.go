@@ -108,15 +108,15 @@ func (r *Ray) GetCollisionPointWithCylinder(cylinder CylinderCollider) (*rl.Vect
 		point := rl.Vector3Scale(r.Direction, stepsY)
 		length := rl.Vector3Length(point)
 		point = rl.Vector3Add(point, r.Origin)
-		if rl.Vector2Length(rl.Vector2Subtract(GetVector2DXZ(point), GetVector2DXZ(cylinder.Position))) <= cylinder.Radius {
+		if rl.Vector2Length(rl.Vector2Subtract(GetVector2XZ(point), GetVector2XZ(cylinder.Position))) <= cylinder.Radius {
 			return &point, length
 		}
 	}
-	rayStart := GetVector2DXZ(r.Origin) //source for math: https://youtu.be/ebzlMOw79Yw?si=I1rRq7fPx9mPEyjk
-	circleCenter := GetVector2DXZ(cylinder.Position)
+	rayStart := GetVector2XZ(r.Origin) //source for math: https://youtu.be/ebzlMOw79Yw?si=I1rRq7fPx9mPEyjk
+	circleCenter := GetVector2XZ(cylinder.Position)
 	s := rl.Vector2Subtract(rayStart, circleCenter)
-	a := rl.Vector2DotProduct(GetVector2DXZ(r.Direction), GetVector2DXZ(r.Direction))
-	b := rl.Vector2DotProduct(s, GetVector2DXZ(r.Direction))
+	a := rl.Vector2DotProduct(GetVector2XZ(r.Direction), GetVector2XZ(r.Direction))
+	b := rl.Vector2DotProduct(s, GetVector2XZ(r.Direction))
 	c := rl.Vector2DotProduct(s, s) - (cylinder.Radius * cylinder.Radius)
 	h := b*b - (a * c)
 	if h < 0 {
