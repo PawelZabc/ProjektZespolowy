@@ -44,6 +44,7 @@ func main() {
 	objects = append(objects, object2)
 	ceiling := s_entities.NewPlaneCollider(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
 	objects = append(objects, ceiling)
+	numberOFUpdates := int64(0)
 	go func() {
 		buffer := make([]byte, 1024)
 		for {
@@ -64,32 +65,43 @@ func main() {
 				fmt.Println("New client:", clientAddr)
 			} else {
 				player := clients[clientAddr.String()]
-				var data udp_data.ClientData = udp_data.DeserializeClientData(buffer[:n])
-				player.RotationX = data.RotationX
-				player.RotationY = data.RotationY
-				for _, input := range data.Inputs {
-					switch input {
-					case types.MoveForward:
-						player.Movement.Y = 1
-					case types.MoveBackward:
-						player.Movement.Y = -1
-					case types.MoveLeft:
-						player.Movement.X = 1
-					case types.MoveRight:
-						player.Movement.X = -1
-					case types.Jump:
-						if player.IsOnFloor {
-							player.Velocity.Y = 0.1
+				if player.LastMessage != numberOFUpdates {
+					player.LastMessage = numberOFUpdates
+					var data udp_data.ClientData = udp_data.DeserializeClientData(buffer[:n])
+					player.RotationX = data.RotationX
+					player.RotationY = data.RotationY
+					for _, input := range data.Inputs {
+						switch input {
+						case types.MoveForward:
+							player.Movement.Y = 1
+						case types.MoveBackward:
+							player.Movement.Y = -1
+						case types.MoveLeft:
+							player.Movement.X = 1
+						case types.MoveRight:
+							player.Movement.X = -1
+						case types.Jump:
+							if player.IsOnFloor {
+								player.Velocity.Y = 0.1
+							}
 						}
 					}
 				}
+
 			}
 		}
 	}()
 
 	gravity := float32(0.005)
+
 	physicsUpdate := func() {
+		numberOFUpdates++
 		for _, player := range clients {
+			if numberOFUpdates-player.LastMessage > 200 {
+				fmt.Println("Client disconnected: ", player.Address.String())
+				delete(clients, player.Address.String())
+				continue
+			}
 			player.Velocity.Y -= gravity
 			player.Move()
 			player.IsOnFloor = false
@@ -123,7 +135,7 @@ func main() {
 		for _, player := range clients {
 			udpSend := udp_data.ServerData{}
 			udpSend.Position = player.GetPosition()
-			fmt.Println(player.Address, player.GetPosition())
+			// fmt.Println(player.Address, player.GetPosition())
 			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address)
 		}
 	}
