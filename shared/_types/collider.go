@@ -11,3 +11,9 @@ type Collider interface {
 	AddPosition(rl.Vector3)
 	PushbackFrom(Collider) Direction
 }
+
+type Change struct {
+	Value float32
+	Axis  Direction
+	Skip  bool
+}

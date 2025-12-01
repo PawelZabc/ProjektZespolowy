@@ -12,28 +12,6 @@ import (
 	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
 )
 
-// func LoadModel(name string) rl.Model {
-// 	model, _ := assets.GlobalManager.LoadModel(name + ".glb")
-
-// 	// shader, err := assets.GlobalManager.LoadShader(assets.ShaderLightingVS, assets.ShaderLightingFS)
-// 	// if err != nil {
-// 	// 	fmt.Println("Error with loading shader")
-// 	// }
-
-// 	// model.Data.Materials.Shader = shader.Data
-
-// 	// lightDirLoc := rl.GetShaderLocation(shader.Data, "lightDir")
-// 	// baseColorLoc := rl.GetShaderLocation(shader.Data, "baseColor")
-// 	// ambientColorLoc := rl.GetShaderLocation(shader.Data, "ambientColor")
-
-// 	// lightDir := []float32{0.0, -1.0, -1.0}
-// 	// rl.SetShaderValue(shader.Data, lightDirLoc, lightDir, rl.ShaderUniformVec3)
-
-// 	// rl.SetShaderValue(shader.Data, baseColorLoc, []float32{1.0, 0.3, 0.2, 1.0}, rl.ShaderUniformVec4)
-// 	// rl.SetShaderValue(shader.Data, ambientColorLoc, []float32{0.2, 0.2, 0.2, 1.0}, rl.ShaderUniformVec4)
-// 	return model.Data
-// }
-
 func CreateCylinderObject(position rl.Vector3, radius float32, height float32) Object {
 	model, _ := assets.GlobalManager.LoadModel(assets.ModelCylinder)
 	object := Object{Collider: &s_entities.CylinderCollider{
@@ -80,7 +58,6 @@ func CreatePlaneObject(position rl.Vector3, Width float32, Height float32, Direc
 			object.Model.Transform = rl.MatrixScale(Width, Height, 0.01)
 		}
 	}
-	// object.Model.Transform = rl.MatrixScale(Width, 0.01, Height)
 	return object
 }
 
@@ -122,13 +99,7 @@ func CreateRoomWallsFromPoint(Points []rl.Vector2, StartHeight float32, Height f
 
 }
 
-type Change struct {
-	Value float32
-	Axis  s_types.Direction
-	Skip  bool
-}
-
-func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height float32) []*Object {
+func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []s_types.Change, Height float32) []*Object {
 
 	count := 0
 	for _, change := range Changes {
