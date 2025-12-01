@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	//create connection
 	addr := net.UDPAddr{
 		Port: 9000,
 		IP:   net.ParseIP("0.0.0.0"),
@@ -26,14 +27,11 @@ func main() {
 	defer conn.Close()
 
 	fmt.Println("Server listening on port 9000...")
+	//end creating connection
 
-	clients := make(map[string]*s_entities.Player)
-	// player := s_entities.Player{
-	// 	Velocity: rl.Vector3{},
-	// 	Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1),
-	// 	Speed:    0.1,
-	// }
+	clients := make(map[string]*s_entities.Player) //create player map
 
+	//create objects
 	objects := make([]types.Collider, 0, 100)
 	floor := s_entities.NewPlaneCollider(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
 	objects = append(objects, floor)
@@ -44,6 +42,7 @@ func main() {
 	objects = append(objects, object2)
 	ceiling := s_entities.NewPlaneCollider(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
 	objects = append(objects, ceiling)
+	//end of create objects
 	numberOFUpdates := int64(0)
 	go func() {
 		buffer := make([]byte, 1024)
@@ -53,24 +52,24 @@ func main() {
 			if err != nil {
 				fmt.Print("error")
 				continue
-			}
+			} //check if there is a new message, if not continue
 
-			if _, ok := clients[clientAddr.String()]; !ok {
-				clients[clientAddr.String()] = &s_entities.Player{
+			if _, ok := clients[clientAddr.String()]; !ok { //check if the address is new
+				clients[clientAddr.String()] = &s_entities.Player{ //add new client to player map
 					Velocity: rl.Vector3{},
-					Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1),
-					Speed:    0.1,
+					Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5 /*add to opts*/, 1 /*add to opts*/), //add to opts
+					Speed:    0.1,                                                                                            //add to opts
 					Address:  clientAddr,
 				}
 				fmt.Println("New client:", clientAddr)
 			} else {
-				player := clients[clientAddr.String()]
-				if player.LastMessage != numberOFUpdates {
+				player := clients[clientAddr.String()]     //get current player from address
+				if player.LastMessage != numberOFUpdates { //check if there was already an update from the player
 					player.LastMessage = numberOFUpdates
-					var data udp_data.ClientData = udp_data.DeserializeClientData(buffer[:n])
+					var data udp_data.ClientData = udp_data.DeserializeClientData(buffer[:n]) // deserialize data
 					player.RotationX = data.RotationX
 					player.RotationY = data.RotationY
-					for _, input := range data.Inputs {
+					for _, input := range data.Inputs { //decide what to do with the inputs
 						switch input {
 						case types.MoveForward:
 							player.Movement.Y = 1
@@ -92,19 +91,19 @@ func main() {
 		}
 	}()
 
-	gravity := float32(0.005)
+	gravity := float32(0.005) //set gravity ,add to opts
 	physicsUpdate := func() {
 		numberOFUpdates++
 		for _, player := range clients {
-			if numberOFUpdates-player.LastMessage > 200 {
+			if numberOFUpdates-player.LastMessage > 200 /*add to opts*/ { //if last message was 200 updates ago disconnect player
 				fmt.Println("Client disconnected: ", player.Address.String())
 				delete(clients, player.Address.String())
 				continue
 			}
-			player.Velocity.Y -= gravity
+			player.Velocity.Y -= gravity //aply gravity
 			player.Move()
 			player.IsOnFloor = false
-			for _, obj := range objects {
+			for _, obj := range objects { //collide with every object
 				if obj != nil {
 					direction := player.Collider.PushbackFrom(obj)
 					if direction == types.DirYminus {
@@ -115,25 +114,24 @@ func main() {
 					}
 				}
 			}
-			// fmt.Println(player.GetPosition())
 		}
 
 	}
 
-	go func() {
-		ticker := time.NewTicker(time.Second / 60)
+	go func() { //update 60 times a second
+		ticker := time.NewTicker(time.Second / 60 /*add to opts*/)
 		for range ticker.C {
 			physicsUpdate()
 		}
 
 	}()
 
-	players := make([]udp_data.PlayerData, 0, 10)
-	ticker := time.NewTicker(time.Second / 30)
-	for range ticker.C {
+	players := make([]udp_data.PlayerData, 0, 10 /*add to opts*/)
+	ticker := time.NewTicker(time.Second / 30 /*add to opts*/)
+	for range ticker.C { //send data 30 times a second
 
 		for _, player := range clients {
-			players = make([]udp_data.PlayerData, 0, 10)
+			players = make([]udp_data.PlayerData, 0, 10) //create a list with every player except itself
 			for _, player2 := range clients {
 				if player2.Address != player.Address {
 					players = append(players, udp_data.PlayerData{
@@ -144,9 +142,7 @@ func main() {
 			udpSend := udp_data.ServerData{}
 			udpSend.Position = player.GetPosition()
 			udpSend.Players = players
-			// fmt.Println(players)
-			// fmt.Println(player.Address, player.GetPosition())
-			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address)
+			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address) //send data
 		}
 	}
 }

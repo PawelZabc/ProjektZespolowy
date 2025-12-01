@@ -25,6 +25,7 @@ func init() {
 //go:generate go run ./utils/assetgen/main.go
 
 func main() {
+	//create connection
 	serverIP := flag.String("ip", "127.0.0.1", "Server IP address")
 	flag.Parse()
 
@@ -44,11 +45,12 @@ func main() {
 		panic(err)
 	}
 	defer conn.Close()
+	//end of create connection
 
-	rl.InitWindow(800, 600, "Client: Send Inputs, Receive Position")
-	rl.SetTargetFPS(60)
+	rl.InitWindow(800, 600, "Client: Send Inputs, Receive Position") //setup window
+	rl.SetTargetFPS(60 /*add to opts*/)
 	defer rl.CloseWindow()
-	camera := rl.Camera{
+	camera := rl.Camera{ //setup camera
 		Position:   rl.NewVector3(0, 4.0, 4.0),
 		Target:     rl.NewVector3(0.0, 1.0, 0.0),
 		Up:         rl.NewVector3(0.0, 1.0, 0.0),
@@ -56,20 +58,20 @@ func main() {
 		Projection: rl.CameraPerspective,
 	}
 
-	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1)
+	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1) //create player
 	players := make([]*entities.Object, 0, 12)
 
-	go func() {
+	go func() { //go routine for receving messages
 		buffer := make([]byte, 1024)
 		for {
 			conn.SetReadDeadline(time.Now().Add(1 * time.Second))
-			n, _, err := conn.ReadFromUDP(buffer)
+			n, _, err := conn.ReadFromUDP(buffer) //check if  theres a new message
 			if err != nil {
 				continue
 			}
-			players = make([]*entities.Object, 0, 12)
-			var data udp_data.ServerData = udp_data.DeserializeServerData(buffer[:n])
-			for _, player2 := range data.Players {
+			players = make([]*entities.Object, 0, 12)                                 //empty the player slice
+			var data udp_data.ServerData = udp_data.DeserializeServerData(buffer[:n]) //deserialize data
+			for _, player2 := range data.Players {                                    //fill players slice with received players
 				playerObject := entities.CreateCylinderObject(player2.Position, 0.5, 1)
 				players = append(players, &playerObject)
 			}
@@ -78,7 +80,7 @@ func main() {
 	}()
 
 	objects := []*entities.Object{}
-
+	//create objects
 	object := entities.CreateCylinderObject(rl.NewVector3(1, 1, 0), 0.5, 1)
 	objects = append(objects, &object)
 	object2 := entities.CreateCubeObject(rl.NewVector3(-3, 0, 6), 6, 1, 2)
@@ -90,60 +92,61 @@ func main() {
 
 	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), leveldata.Changes, 3)...)
 	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
+	//end of create objects
 
-	conn.Write([]byte("hello"))
+	conn.Write([]byte("hello")) //send hello to server to register address
 	rl.HideCursor()
 	centerx := rl.GetScreenWidth() / 2
-	centery := rl.GetScreenHeight() / 2
+	centery := rl.GetScreenHeight() / 2 //calculate center of the screen
 	cameraRotationx := float32(-math.Pi / 2)
-	cameraRotationy := float32(-math.Pi / 2)
-	rl.SetMousePosition(centerx, centery)
+	cameraRotationy := float32(-math.Pi / 2) //setup camera rotation to look fowrward
+	rl.SetMousePosition(centerx, centery)    //reset mouse to the middle of the screen
 
 	udpSend := udp_data.ClientData{}
 	for !rl.WindowShouldClose() {
-		deltaMouse := rl.GetMousePosition()
+		deltaMouse := rl.GetMousePosition() //check how much mouse has moved
 
 		cameraRotationx += (deltaMouse.X - float32(centerx)) / 100 * config.CameraSensivity
-		cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100 * config.CameraSensivity
+		cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100 * config.CameraSensivity //change camera rotation based on mouse movement
 		if cameraRotationy > config.CameraLockMax {
 			cameraRotationy = config.CameraLockMax
 		} else if cameraRotationy < config.CameraLockMin {
 			cameraRotationy = config.CameraLockMin
 		}
-		udpSend = udp_data.ClientData{
+		rl.SetMousePosition(centerx, centery)
+		udpSend = udp_data.ClientData{ //create object to send
 			RotationX: cameraRotationx,
 			RotationY: cameraRotationy,
 			Inputs:    make([]types.PlayerAction, 0, 5),
 		}
-		if rl.IsKeyDown(rl.KeyW) {
+		if rl.IsKeyDown(rl.KeyW /*add to opts*/) { //add player actions to udpSend based on inputs
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveForward)
 		}
-		if rl.IsKeyDown(rl.KeyS) {
+		if rl.IsKeyDown(rl.KeyS /*add to opts*/) {
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveBackward)
 		}
-		if rl.IsKeyDown(rl.KeyA) {
+		if rl.IsKeyDown(rl.KeyA /*add to opts*/) {
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveLeft)
 		}
-		if rl.IsKeyDown(rl.KeyD) {
+		if rl.IsKeyDown(rl.KeyD /*add to opts*/) {
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveRight)
 		}
 
-		if rl.IsKeyDown(rl.KeySpace) {
+		if rl.IsKeyDown(rl.KeySpace /*add to opts*/) {
 			udpSend.Inputs = append(udpSend.Inputs, types.Jump)
 		}
 
 		target := rl.Vector3{X: float32(math.Sin(cameraRotationy) * math.Cos(cameraRotationx)),
 			Z: float32(math.Sin(cameraRotationy) * math.Sin(cameraRotationx)),
 			Y: float32(math.Cos(cameraRotationy))}
-		target = rl.Vector3Normalize(target)
+		target = rl.Vector3Normalize(target) //create a normal vector based on rotation
 
-		camera.Position = rl.Vector3Add(player.Collider.GetPosition(), rl.NewVector3(0, 0.5, 0))
-		playerRay := s_entities.Ray{Origin: camera.Position, Direction: target}
+		camera.Position = rl.Vector3Add(player.Collider.GetPosition(), rl.NewVector3(0, 0.5 /*ad to opts*/, 0)) //set camera to player position with height offset
+		playerRay := s_entities.Ray{Origin: camera.Position, Direction: target}                                 //change player ray to have the same looking direction as the camera
 		target = rl.Vector3Add(target, camera.Position)
-		camera.Target = target
-		rl.SetMousePosition(centerx, centery)
+		camera.Target = target //set camera target
 
-		data := udp_data.SerializeClientData(udpSend)
+		data := udp_data.SerializeClientData(udpSend) // send input and player data to the server
 		_, err := conn.Write(data)
 		if err != nil {
 			fmt.Println("Write error:", err)
@@ -151,7 +154,7 @@ func main() {
 
 		var pointPosition *rl.Vector3 = nil
 		var minLength = float32(0)
-		for _, obj := range objects {
+		for _, obj := range objects { //check for nearest intersection point with the player ray
 			if obj != nil {
 				point, length := playerRay.GetCollisionPoint(obj.Collider)
 				if point != nil {
@@ -170,12 +173,12 @@ func main() {
 
 		if pointPosition != nil {
 			rl.DrawModel(pointObject.Model, rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05)), 1.0, rl.Black)
-		}
+		} //draw the intersection point of player ray
 
-		for _, obj := range objects {
+		for _, obj := range objects { //draw every object
 			if obj != nil {
 				if plane, ok := obj.Collider.(*s_entities.PlaneCollider); ok {
-					switch plane.Direction {
+					switch plane.Direction { //check which color to draw the plane as
 					case types.DirX:
 						{
 							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Red)
@@ -193,7 +196,7 @@ func main() {
 							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Yellow)
 						}
 					}
-				} else {
+				} else { //if not plane color white
 					rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
 				}
 
@@ -201,7 +204,7 @@ func main() {
 
 		}
 
-		for _, obj := range players {
+		for _, obj := range players { //draw players
 			if obj != nil {
 				rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
 			}
