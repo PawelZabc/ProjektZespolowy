@@ -11,25 +11,12 @@ import (
 	entities "github.com/PawelZabc/ProjektZespolowy/client/entities"
 	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
 	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
-	math "github.com/chewxy/math32"
-
+	leveldata "github.com/PawelZabc/ProjektZespolowy/shared/level_data"
 	udp_data "github.com/PawelZabc/ProjektZespolowy/shared/udp_data"
+	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
-
-type Position struct {
-	X float32 `json:"x"`
-	Y float32 `json:"y"`
-	Z float32 `json:"z"`
-}
-
-type Data struct {
-	X     float32 `json:"x"`
-	Y     float32 `json:"y"`
-	Z     float32 `json:"z"`
-	Frame int32   `json:"frame"`
-}
 
 func init() {
 	assets.Init()
@@ -95,29 +82,7 @@ func main() {
 	ceiling := entities.CreatePlaneObject(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
 	objects = append(objects, &ceiling)
 
-	changes := []entities.Change{
-		{Value: 20, Axis: types.DirX},
-		{Value: 5, Axis: types.DirZ},
-		{Value: 5, Axis: types.DirX},
-		{Value: -5, Axis: types.DirZ},
-		{Value: 10, Axis: types.DirX},
-		{Value: 30, Axis: types.DirZ},
-		{Value: -10, Axis: types.DirX},
-		{Value: -20, Axis: types.DirZ},
-		{Value: -5, Axis: types.DirX},
-		{Value: 10, Axis: types.DirZ},
-		{Value: -20, Axis: types.DirX},
-		{Value: -10, Axis: types.DirZ},
-		{Value: -5, Axis: types.DirX},
-		{Value: 20, Axis: types.DirZ},
-		{Value: -10, Axis: types.DirX},
-		{Value: -30, Axis: types.DirZ},
-		{Value: 10, Axis: types.DirX},
-		{Value: 5, Axis: types.DirZ},
-		{Value: 5, Axis: types.DirX},
-		{Value: -5, Axis: types.DirZ},
-	}
-	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), changes, 3)...)
+	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), leveldata.Changes, 3)...)
 	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
 
 	conn.Write([]byte("hello"))
@@ -172,11 +137,6 @@ func main() {
 		camera.Target = target
 		rl.SetMousePosition(centerx, centery)
 
-		// point, _ := playerRay.GetCollisionPoint(objects[3].Collider)
-		// fmt.Println(objects[3].Collider)
-		// fmt.Println(player.Collider.GetPosition())
-		// if input != "" {
-		// fmt.Println(udp_data.DeserializeClientData(udp_data.SerializeClientData(udpSend)))
 		data := udp_data.SerializeClientData(udpSend)
 		_, err := conn.Write(data)
 		if err != nil {
@@ -234,7 +194,6 @@ func main() {
 			}
 
 		}
-		// rl.DrawGrid(10, 1.0)
 
 		rl.EndMode3D()
 		rl.DrawText("Collision demo", 10, 10, 20, rl.Black)
