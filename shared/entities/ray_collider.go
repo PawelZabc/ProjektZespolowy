@@ -197,7 +197,3 @@ func (r *Ray) GetCollisionPointWithPlane(plane PlaneCollider) (*rl.Vector3, floa
 	}
 	return nil, 0
 }
-
-func GetVector2DXZ(vec rl.Vector3) rl.Vector2 {
-	return rl.NewVector2(vec.X, vec.Z)
-}
