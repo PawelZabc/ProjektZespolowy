@@ -57,6 +57,7 @@ func main() {
 	}
 
 	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1)
+	players := make([]*entities.Object, 0, 12)
 
 	go func() {
 		buffer := make([]byte, 1024)
@@ -66,7 +67,12 @@ func main() {
 			if err != nil {
 				continue
 			}
+			players = make([]*entities.Object, 0, 12)
 			var data udp_data.ServerData = udp_data.DeserializeServerData(buffer[:n])
+			for _, player2 := range data.Players {
+				playerObject := entities.CreateCylinderObject(player2.Position, 0.5, 1)
+				players = append(players, &playerObject)
+			}
 			player.Collider.SetPosition(data.Position)
 		}
 	}()
@@ -193,6 +199,12 @@ func main() {
 
 			}
 
+		}
+
+		for _, obj := range players {
+			if obj != nil {
+				rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
+			}
 		}
 
 		rl.EndMode3D()

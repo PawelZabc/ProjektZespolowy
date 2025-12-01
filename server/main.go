@@ -93,7 +93,6 @@ func main() {
 	}()
 
 	gravity := float32(0.005)
-
 	physicsUpdate := func() {
 		numberOFUpdates++
 		for _, player := range clients {
@@ -129,12 +128,23 @@ func main() {
 
 	}()
 
+	players := make([]udp_data.PlayerData, 0, 10)
 	ticker := time.NewTicker(time.Second / 30)
 	for range ticker.C {
 
 		for _, player := range clients {
+			players = make([]udp_data.PlayerData, 0, 10)
+			for _, player2 := range clients {
+				if player2.Address != player.Address {
+					players = append(players, udp_data.PlayerData{
+						Position: player2.Collider.GetPosition(),
+					})
+				}
+			}
 			udpSend := udp_data.ServerData{}
 			udpSend.Position = player.GetPosition()
+			udpSend.Players = players
+			// fmt.Println(players)
 			// fmt.Println(player.Address, player.GetPosition())
 			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address)
 		}
