@@ -1,7 +1,7 @@
 package entities
 
 import (
-	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
+	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
 	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -141,4 +141,13 @@ func (c *CubeCollider) PushbackFromCylinder(cylinder *CylinderCollider) types.Di
 		return types.DirNone
 	}
 
+}
+
+func NewCubeCollider(position rl.Vector3, sizeX float32, sizeY float32, sizeZ float32) *CubeCollider {
+	return &CubeCollider{
+		Position: position,
+		SizeX:    sizeX,
+		SizeY:    sizeY,
+		SizeZ:    sizeZ,
+	}
 }

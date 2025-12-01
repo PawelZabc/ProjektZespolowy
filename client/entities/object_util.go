@@ -7,35 +7,14 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
-	types "github.com/PawelZabc/ProjektZespolowy/client/_types"
 	"github.com/PawelZabc/ProjektZespolowy/client/assets"
+	s_types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
+	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
 )
-
-// func LoadModel(name string) rl.Model {
-// 	model, _ := assets.GlobalManager.LoadModel(name + ".glb")
-
-// 	// shader, err := assets.GlobalManager.LoadShader(assets.ShaderLightingVS, assets.ShaderLightingFS)
-// 	// if err != nil {
-// 	// 	fmt.Println("Error with loading shader")
-// 	// }
-
-// 	// model.Data.Materials.Shader = shader.Data
-
-// 	// lightDirLoc := rl.GetShaderLocation(shader.Data, "lightDir")
-// 	// baseColorLoc := rl.GetShaderLocation(shader.Data, "baseColor")
-// 	// ambientColorLoc := rl.GetShaderLocation(shader.Data, "ambientColor")
-
-// 	// lightDir := []float32{0.0, -1.0, -1.0}
-// 	// rl.SetShaderValue(shader.Data, lightDirLoc, lightDir, rl.ShaderUniformVec3)
-
-// 	// rl.SetShaderValue(shader.Data, baseColorLoc, []float32{1.0, 0.3, 0.2, 1.0}, rl.ShaderUniformVec4)
-// 	// rl.SetShaderValue(shader.Data, ambientColorLoc, []float32{0.2, 0.2, 0.2, 1.0}, rl.ShaderUniformVec4)
-// 	return model.Data
-// }
 
 func CreateCylinderObject(position rl.Vector3, radius float32, height float32) Object {
 	model, _ := assets.GlobalManager.LoadModel(assets.ModelCylinder)
-	object := Object{Collider: &CylinderCollider{
+	object := Object{Collider: &s_entities.CylinderCollider{
 		Position: position,
 		Radius:   radius,
 		Height:   height,
@@ -46,7 +25,7 @@ func CreateCylinderObject(position rl.Vector3, radius float32, height float32) O
 }
 func CreateCubeObject(position rl.Vector3, sizeX float32, sizeY float32, sizeZ float32) Object {
 	model, _ := assets.GlobalManager.LoadModel(assets.ModelCube)
-	object := Object{Collider: &CubeCollider{
+	object := Object{Collider: &s_entities.CubeCollider{
 		Position: position,
 		SizeX:    sizeX,
 		SizeY:    sizeY,
@@ -56,9 +35,9 @@ func CreateCubeObject(position rl.Vector3, sizeX float32, sizeY float32, sizeZ f
 	object.Model.Transform = rl.MatrixScale(sizeX, sizeY, sizeZ)
 	return object
 }
-func CreatePlaneObject(position rl.Vector3, Width float32, Height float32, Direction types.Direction) Object {
+func CreatePlaneObject(position rl.Vector3, Width float32, Height float32, Direction s_types.Direction) Object {
 	model, _ := assets.GlobalManager.LoadModel(assets.ModelCube)
-	object := Object{Collider: &PlaneCollider{
+	object := Object{Collider: &s_entities.PlaneCollider{
 		Position:  position,
 		Width:     Width,
 		Height:    Height,
@@ -66,20 +45,19 @@ func CreatePlaneObject(position rl.Vector3, Width float32, Height float32, Direc
 	}, Model: model.Data,
 	}
 	switch Direction {
-	case types.DirX, types.DirXminus:
+	case s_types.DirX, s_types.DirXminus:
 		{
 			object.Model.Transform = rl.MatrixScale(0.01, Height, Width)
 		}
-	case types.DirY, types.DirYminus:
+	case s_types.DirY, s_types.DirYminus:
 		{
 			object.Model.Transform = rl.MatrixScale(Width, 0.01, Height)
 		}
-	case types.DirZ, types.DirZminus:
+	case s_types.DirZ, s_types.DirZminus:
 		{
 			object.Model.Transform = rl.MatrixScale(Width, Height, 0.01)
 		}
 	}
-	// object.Model.Transform = rl.MatrixScale(Width, 0.01, Height)
 	return object
 }
 
@@ -92,10 +70,10 @@ func CreateRoomWallsFromPoint(Points []rl.Vector2, StartHeight float32, Height f
 		point1 := Points[i-1]
 		point2 := Points[i]
 		diffrence := rl.Vector2Subtract(point2, point1)
-		direction := types.DirNone
+		direction := s_types.DirNone
 		Width := float32(0)
 		if diffrence.X != 0 {
-			direction = types.DirZ
+			direction = s_types.DirZ
 
 			Width = diffrence.X
 			if diffrence.X < 0 {
@@ -103,7 +81,7 @@ func CreateRoomWallsFromPoint(Points []rl.Vector2, StartHeight float32, Height f
 				Width = -diffrence.X
 			}
 		} else {
-			direction = types.DirX
+			direction = s_types.DirX
 			Width = diffrence.Y
 			if diffrence.Y < 0 {
 				point1 = point2
@@ -121,13 +99,7 @@ func CreateRoomWallsFromPoint(Points []rl.Vector2, StartHeight float32, Height f
 
 }
 
-type Change struct {
-	Value float32
-	Axis  types.Direction
-	Skip  bool
-}
-
-func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height float32) []*Object {
+func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []s_types.Change, Height float32) []*Object {
 
 	count := 0
 	for _, change := range Changes {
@@ -138,15 +110,15 @@ func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height 
 	walls := make([]*Object, len(Changes))
 	skipped := 0
 	for i, change := range Changes {
-		if change.Axis == types.DirX {
-			change.Axis = types.DirZ
+		if change.Axis == s_types.DirX {
+			change.Axis = s_types.DirZ
 		} else {
-			change.Axis = types.DirX
+			change.Axis = s_types.DirX
 		}
 
 		var object Object
 		if change.Value < 0 {
-			if change.Axis == types.DirX {
+			if change.Axis == s_types.DirX {
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(0, 0, change.Value))
 			} else {
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(change.Value, 0, 0))
@@ -159,7 +131,7 @@ func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height 
 			skipped += 1
 		}
 		if change.Value > 0 {
-			if change.Axis == types.DirX {
+			if change.Axis == s_types.DirX {
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(0, 0, change.Value))
 			} else {
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(change.Value, 0, 0))
@@ -170,8 +142,4 @@ func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height 
 	}
 
 	return walls
-}
-
-func GetVector2DXZ(vec rl.Vector3) rl.Vector2 {
-	return rl.NewVector2(vec.X, vec.Z)
 }
