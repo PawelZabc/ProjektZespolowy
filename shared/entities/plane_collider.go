@@ -2,6 +2,7 @@ package entities
 
 import (
 	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
+	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -43,3 +44,47 @@ func NewPlaneCollider(position rl.Vector3, Width float32, Height float32, Direct
 }
 
 var _ types.Collider = (*PlaneCollider)(nil)
+
+func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []types.Change, Height float32) []types.Collider {
+
+	count := 0
+	for _, change := range Changes {
+		if !change.Skip {
+			count++
+		}
+	}
+	walls := make([]types.Collider, len(Changes))
+	skipped := 0
+	for i, change := range Changes {
+		if change.Axis == types.DirX {
+			change.Axis = types.DirZ
+		} else {
+			change.Axis = types.DirX
+		}
+
+		var object PlaneCollider
+		if change.Value < 0 {
+			if change.Axis == types.DirX {
+				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(0, 0, change.Value))
+			} else {
+				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(change.Value, 0, 0))
+			}
+		}
+		if !change.Skip {
+			object = *NewPlaneCollider(StartPoint, math.Abs(change.Value), Height, change.Axis)
+			walls[i-skipped] = &object
+		} else {
+			skipped += 1
+		}
+		if change.Value > 0 {
+			if change.Axis == types.DirX {
+				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(0, 0, change.Value))
+			} else {
+				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(change.Value, 0, 0))
+			}
+		}
+
+	}
+
+	return walls
+}
