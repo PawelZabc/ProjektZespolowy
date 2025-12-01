@@ -11,7 +11,7 @@ type Player struct {
 	IsOnFloor bool
 	Velocity  rl.Vector3
 	Collider  types.Collider
-	Address   net.UDPAddr
+	Address   *net.UDPAddr
 	RotationX float32
 	RotationY float32
 	Movement  rl.Vector2
