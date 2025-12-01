@@ -18,7 +18,7 @@ func SerializeClientData(c ClientData) []byte {
 	buf := make([]byte, 0, size)
 	b := bytes.NewBuffer(buf)
 
-	binary.Write(b, binary.LittleEndian, uint32(len(c.Inputs)))
+	binary.Write(b, binary.LittleEndian, uint8(len(c.Inputs)))
 	binary.Write(b, binary.LittleEndian, c.RotationX)
 	binary.Write(b, binary.LittleEndian, c.RotationY)
 	for _, input := range c.Inputs {
@@ -31,7 +31,7 @@ func SerializeClientData(c ClientData) []byte {
 func DeserializeClientData(buf []byte) ClientData {
 	b := bytes.NewReader(buf)
 	c := ClientData{}
-	var size uint32
+	var size uint8
 	binary.Read(b, binary.LittleEndian, &size)
 	binary.Read(b, binary.LittleEndian, &c.RotationX)
 	binary.Read(b, binary.LittleEndian, &c.RotationY)
