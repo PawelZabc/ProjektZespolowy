@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/PawelZabc/ProjektZespolowy/client/assets"
 	"github.com/PawelZabc/ProjektZespolowy/client/config"
@@ -68,30 +69,22 @@ func main() {
 		Projection: rl.CameraPerspective,
 	}
 
-	// go func() {
-	// 	buffer := make([]byte, 1024)
-	// 	for {
-	// 		conn.SetReadDeadline(time.Now().Add(1 * time.Second))
-	// 		n, _, err := conn.ReadFromUDP(buffer)
-	// 		if err != nil {
-	// 			continue
-	// 		}
-	// 		// var pos Position
-	// 		var data Data
-	// 		err = json.Unmarshal(buffer[:n], &data)
-	// 		// if len(animations) > 0 && animations[0].FrameCount > 0 && model.BoneCount > 0 {
-	// 		// 	rl.UpdateModelAnimation(model, animations[0], data.Frame%animations[0].FrameCount)
-	// 		// }
-	// 		// println(data.Frame % animations[0].FrameCount)
-	// 		if err == nil {
-	// 			position = rl.NewVector3(data.X, data.Y, data.Z)
-	// 		}
-	// 	}
-	// }()
+	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1)
+
+	go func() {
+		buffer := make([]byte, 1024)
+		for {
+			conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+			n, _, err := conn.ReadFromUDP(buffer)
+			if err != nil {
+				continue
+			}
+			var data udp_data.ServerData = udp_data.DeserializeServerData(buffer[:n])
+			player.Collider.SetPosition(data.Position)
+		}
+	}()
 
 	objects := []*entities.Object{}
-
-	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1)
 
 	object := entities.CreateCylinderObject(rl.NewVector3(1, 1, 0), 0.5, 1)
 	objects = append(objects, &object)
@@ -101,13 +94,7 @@ func main() {
 	objects = append(objects, &floor)
 	ceiling := entities.CreatePlaneObject(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
 	objects = append(objects, &ceiling)
-	// points := []rl.Vector2{
-	// 	rl.NewVector2(-10, -10),
-	// 	rl.NewVector2(-10, 10),
-	// 	rl.NewVector2(10, 10),
-	// 	rl.NewVector2(10, -10),
-	// 	rl.NewVector2(-10, -10)}
-	// objects = append(objects, entities.CreateRoomWallsFromPoints(points, 0, 3)...)
+
 	changes := []entities.Change{
 		{Value: 20, Axis: types.DirX},
 		{Value: 5, Axis: types.DirZ},
@@ -139,13 +126,8 @@ func main() {
 	centery := rl.GetScreenHeight() / 2
 	cameraRotationx := float32(-math.Pi / 2)
 	cameraRotationy := float32(-math.Pi / 2)
-	gravity := float32(0.005)
-	isOnFloor := false
-	velocity := rl.Vector3{}
 	rl.SetMousePosition(centerx, centery)
 
-	// moving := &player
-	// waspressed := false
 	udpSend := udp_data.ClientData{}
 	for !rl.WindowShouldClose() {
 		deltaMouse := rl.GetMousePosition()
@@ -157,68 +139,26 @@ func main() {
 		} else if cameraRotationy < config.CameraLockMin {
 			cameraRotationy = config.CameraLockMin
 		}
-		// println(cameraRotationy)
-
-		// input := ""
 		udpSend = udp_data.ClientData{
 			RotationX: cameraRotationx,
 			RotationY: cameraRotationy,
 			Inputs:    make([]types.PlayerAction, 0, 5),
 		}
-		velocity.X = 0
-		velocity.Z = 0
-		movement := rl.Vector2{}
 		if rl.IsKeyDown(rl.KeyW) {
-			movement = rl.Vector2Add(movement, rl.NewVector2(0.1, 0))
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveForward)
 		}
 		if rl.IsKeyDown(rl.KeyS) {
-			movement = rl.Vector2Add(movement, rl.NewVector2(-0.1, 0))
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveBackward)
 		}
 		if rl.IsKeyDown(rl.KeyA) {
-			movement = rl.Vector2Add(movement, rl.NewVector2(0, -0.1))
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveLeft)
 		}
 		if rl.IsKeyDown(rl.KeyD) {
-			movement = rl.Vector2Add(movement, rl.NewVector2(0, 0.1))
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveRight)
 		}
 
-		if rl.IsKeyDown(rl.KeySpace) && isOnFloor {
-			velocity.Y = 0.2
+		if rl.IsKeyDown(rl.KeySpace) {
 			udpSend.Inputs = append(udpSend.Inputs, types.Jump)
-		}
-		movement = rl.Vector2Normalize(movement)
-		movement = rl.Vector2Rotate(movement, cameraRotationx)
-		movement = rl.Vector2Scale(movement, -0.1)
-		velocity.Y -= gravity
-		velocity = rl.Vector3Add(velocity, rl.NewVector3(movement.X, 0, movement.Y))
-
-		// if rl.IsKeyDown(rl.KeyE) && !waspressed {
-		// 	waspressed = true
-		// 	if moving == &player {
-		// 		moving = &player2
-		// 	} else {
-		// 		moving = &player
-		// 	}
-		// }
-		// if rl.IsKeyReleased(rl.KeyE) {
-		// 	waspressed = false
-		// }
-
-		player.Collider.AddPosition(velocity)
-		isOnFloor = false
-		for _, obj := range objects {
-			if obj != nil {
-				direction := player.Collider.PushbackFrom(obj.Collider)
-				if direction == types.DirYminus {
-					isOnFloor = true
-					velocity.Y = 0
-				} else if direction == types.DirY {
-					velocity.Y = 0
-				}
-			}
 		}
 
 		target := rl.Vector3{X: float32(math.Sin(cameraRotationy) * math.Cos(cameraRotationx)),
@@ -237,15 +177,11 @@ func main() {
 		// fmt.Println(player.Collider.GetPosition())
 		// if input != "" {
 		// fmt.Println(udp_data.DeserializeClientData(udp_data.SerializeClientData(udpSend)))
-		_, err = conn.Write(udp_data.SerializeClientData(udpSend))
+		data := udp_data.SerializeClientData(udpSend)
+		_, err := conn.Write(data)
 		if err != nil {
-			fmt.Println("Send error:", err)
+			fmt.Println("Write error:", err)
 		}
-		// }
-
-		// println(player.Collider.GetPosition().Y)
-		// println(types.Xminus)
-		// println(-types.X)
 
 		var pointPosition *rl.Vector3 = nil
 		var minLength = float32(0)
