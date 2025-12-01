@@ -27,12 +27,12 @@ func main() {
 
 	fmt.Println("Server listening on port 9000...")
 
-	clients := make(map[string]*net.UDPAddr)
-	player := s_entities.Player{
-		Velocity: rl.Vector3{},
-		Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1),
-		Speed:    0.1,
-	}
+	clients := make(map[string]*s_entities.Player)
+	// player := s_entities.Player{
+	// 	Velocity: rl.Vector3{},
+	// 	Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1),
+	// 	Speed:    0.1,
+	// }
 
 	objects := make([]types.Collider, 0, 100)
 	floor := s_entities.NewPlaneCollider(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
@@ -55,50 +55,57 @@ func main() {
 			}
 
 			if _, ok := clients[clientAddr.String()]; !ok {
-				clients[clientAddr.String()] = clientAddr
+				clients[clientAddr.String()] = &s_entities.Player{
+					Velocity: rl.Vector3{},
+					Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1),
+					Speed:    0.1,
+					Address:  clientAddr,
+				}
 				fmt.Println("New client:", clientAddr)
-			}
-
-			var data udp_data.ClientData = udp_data.DeserializeClientData(buffer[:n])
-			player.RotationX = data.RotationX
-			player.RotationY = data.RotationY
-			for _, input := range data.Inputs {
-				switch input {
-				case types.MoveForward:
-					player.Movement.Y = 1
-				case types.MoveBackward:
-					player.Movement.Y = -1
-				case types.MoveLeft:
-					player.Movement.X = 1
-				case types.MoveRight:
-					player.Movement.X = -1
-				case types.Jump:
-					if player.IsOnFloor {
-						player.Velocity.Y = 0.1
+			} else {
+				player := clients[clientAddr.String()]
+				var data udp_data.ClientData = udp_data.DeserializeClientData(buffer[:n])
+				player.RotationX = data.RotationX
+				player.RotationY = data.RotationY
+				for _, input := range data.Inputs {
+					switch input {
+					case types.MoveForward:
+						player.Movement.Y = 1
+					case types.MoveBackward:
+						player.Movement.Y = -1
+					case types.MoveLeft:
+						player.Movement.X = 1
+					case types.MoveRight:
+						player.Movement.X = -1
+					case types.Jump:
+						if player.IsOnFloor {
+							player.Velocity.Y = 0.1
+						}
 					}
 				}
 			}
-
 		}
 	}()
 
 	gravity := float32(0.005)
 	physicsUpdate := func() {
-		player.Velocity.Y -= gravity
-		player.Move()
-		player.IsOnFloor = false
-		for _, obj := range objects {
-			if obj != nil {
-				direction := player.Collider.PushbackFrom(obj)
-				if direction == types.DirYminus {
-					player.IsOnFloor = true
-					player.Velocity.Y = 0
-				} else if direction == types.DirY {
-					player.Velocity.Y = 0
+		for _, player := range clients {
+			player.Velocity.Y -= gravity
+			player.Move()
+			player.IsOnFloor = false
+			for _, obj := range objects {
+				if obj != nil {
+					direction := player.Collider.PushbackFrom(obj)
+					if direction == types.DirYminus {
+						player.IsOnFloor = true
+						player.Velocity.Y = 0
+					} else if direction == types.DirY {
+						player.Velocity.Y = 0
+					}
 				}
 			}
+			// fmt.Println(player.GetPosition())
 		}
-		fmt.Println(player.GetPosition())
 
 	}
 
@@ -112,11 +119,12 @@ func main() {
 
 	ticker := time.NewTicker(time.Second / 30)
 	for range ticker.C {
-		udpSend := udp_data.ServerData{}
-		udpSend.Position = player.GetPosition()
 
-		for _, c := range clients {
-			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), c)
+		for _, player := range clients {
+			udpSend := udp_data.ServerData{}
+			udpSend.Position = player.GetPosition()
+			fmt.Println(player.Address, player.GetPosition())
+			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address)
 		}
 	}
 }
