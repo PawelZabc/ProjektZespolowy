@@ -44,6 +44,14 @@ run-server:
 	@echo "Running server on $(DETECTED_OS)"
 	cd $(SERVER_PATH) && $(GO) run .
 
+create-server:
+	@echo "Running server on $(DETECTED_OS)"
+	cd $(SERVER_PATH) && $(GO) build -o $(BUILD_DIR)/server.exe && .\bin\server.exe
+
+create-client:
+	@echo "Running server on $(DETECTED_OS)"
+	cd $(CLIENT_PATH) && $(GO) build -o $(BUILD_DIR)/client.exe && .\bin\client.exe
+
 run-both:
 	@echo "Running both client and server..."
 	@$(MAKE) run-server & $(MAKE) run-client
