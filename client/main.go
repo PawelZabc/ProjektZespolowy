@@ -59,7 +59,7 @@ func main() {
 	}
 
 	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1) //create player
-	players := make([]*entities.Object, 0, 12)
+	players := make(map[uint16]*entities.Object)
 
 	go func() { //go routine for receving messages
 		buffer := make([]byte, 1024)
@@ -69,11 +69,22 @@ func main() {
 			if err != nil {
 				continue
 			}
-			players = make([]*entities.Object, 0, 12)                                 //empty the player slice
 			var data udp_data.ServerData = udp_data.DeserializeServerData(buffer[:n]) //deserialize data
-			for _, player2 := range data.Players {                                    //fill players slice with received players
-				playerObject := entities.CreateCylinderObject(player2.Position, 0.5, 1)
-				players = append(players, &playerObject)
+			updatedPlayers := make(map[uint16]bool)                                   //create a map to check which players were sent
+			for _, player2 := range data.Players {                                    //update players slice with received players
+				if player2Object, ok := players[player2.Id]; ok { //check if player with that id existed before
+					player2Object.Collider.SetPosition(player2.Position) //if exists update position
+				} else {
+					cylinder := entities.CreateCylinderObject(player2.Position, 0.5, 1) //if it doesnt create it
+					players[player2.Id] = &cylinder
+				}
+				updatedPlayers[player2.Id] = true //check player as updated
+
+			}
+			for id, _ := range players { //if a player wasnt updated,its no longer at the server so delete it
+				if !updatedPlayers[id] {
+					delete(players, id)
+				}
 			}
 			player.Collider.SetPosition(data.Position)
 		}
