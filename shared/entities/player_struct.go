@@ -17,6 +17,7 @@ type Player struct {
 	Movement    rl.Vector2
 	Speed       float32
 	LastMessage int64
+	Id          uint16
 }
 
 func (p *Player) Move() {
