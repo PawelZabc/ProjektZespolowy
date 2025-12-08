@@ -137,9 +137,70 @@ func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []s_types.Change,
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(change.Value, 0, 0))
 			}
 		}
-		fmt.Println(object.Collider)
+		// fmt.Println(object.Collider)
 
 	}
 
 	return walls
+}
+
+func NewObjectFromCollider(collider s_types.Collider) Object {
+
+	switch c := collider.(type) {
+	case *s_entities.CubeCollider:
+		return NewObjectFromCubeCollider(c)
+	case *s_entities.CylinderCollider:
+		return NewObjectFromCylinderCollider(c)
+	case *s_entities.PlaneCollider:
+		return NewObjectFromPlaneCollider(c)
+	default:
+		return Object{}
+	}
+
+}
+
+func NewObjectFromCubeCollider(collider *s_entities.CubeCollider) Object {
+	model, _ := assets.GlobalManager.LoadModel(assets.ModelCube)
+	object := Object{
+		Model:    model.Data,
+		Collider: collider,
+	}
+	object.Model.Transform = rl.MatrixScale(collider.SizeX, collider.SizeY, collider.SizeZ)
+
+	return object
+}
+
+func NewObjectFromCylinderCollider(collider *s_entities.CylinderCollider) Object {
+	model, _ := assets.GlobalManager.LoadModel(assets.ModelCylinder)
+	object := Object{
+		Model:    model.Data,
+		Collider: collider,
+	}
+	object.Model.Transform = rl.MatrixScale(collider.Radius, collider.Height, collider.Radius)
+
+	return object
+}
+
+func NewObjectFromPlaneCollider(collider *s_entities.PlaneCollider) Object {
+	model, _ := assets.GlobalManager.LoadModel(assets.ModelCube)
+	object := Object{
+		Model:    model.Data,
+		Collider: collider,
+	}
+	switch collider.Direction {
+	case s_types.DirX, s_types.DirXminus:
+		{
+			object.Model.Transform = rl.MatrixScale(0.01, collider.Height, collider.Width)
+		}
+	case s_types.DirY, s_types.DirYminus:
+		{
+			object.Model.Transform = rl.MatrixScale(collider.Width, 0.01, collider.Height)
+		}
+	case s_types.DirZ, s_types.DirZminus:
+		{
+			object.Model.Transform = rl.MatrixScale(collider.Width, collider.Height, 0.01)
+		}
+	}
+
+	return object
 }
