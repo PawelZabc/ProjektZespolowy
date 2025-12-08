@@ -98,6 +98,24 @@ func (r *Ray) GetCollisionPointWithCube(cube CubeCollider) (*rl.Vector3, float32
 }
 
 func (r *Ray) GetCollisionPointWithCylinder(cylinder CylinderCollider) (*rl.Vector3, float32) {
+	rayStart := GetVector2XZ(r.Origin) //source for math: https://youtu.be/ebzlMOw79Yw?si=I1rRq7fPx9mPEyjk
+	circleCenter := GetVector2XZ(cylinder.Position)
+	s := rl.Vector2Subtract(rayStart, circleCenter)
+	a := rl.Vector2DotProduct(GetVector2XZ(r.Direction), GetVector2XZ(r.Direction))
+	b := rl.Vector2DotProduct(s, GetVector2XZ(r.Direction))
+	c := rl.Vector2DotProduct(s, s) - (cylinder.Radius * cylinder.Radius)
+	h := b*b - (a * c)
+	if h >= 0 {
+		h = math.Sqrt(h)
+		t := (-b - h) / a
+		if t >= 0 {
+			point := rl.Vector3Scale(r.Direction, t)
+			point = rl.Vector3Add(point, r.Origin)
+			if point.Y >= cylinder.Position.Y && point.Y <= (cylinder.Position.Y+cylinder.Height) {
+				return &point, t
+			}
+		}
+	}
 	distanceY := cylinder.GetPosition().Y - r.Origin.Y
 	distanceY2 := cylinder.GetPosition().Y + cylinder.Height - r.Origin.Y
 	if math.Abs(distanceY) > math.Abs(distanceY2) {
@@ -112,26 +130,7 @@ func (r *Ray) GetCollisionPointWithCylinder(cylinder CylinderCollider) (*rl.Vect
 			return &point, length
 		}
 	}
-	rayStart := GetVector2XZ(r.Origin) //source for math: https://youtu.be/ebzlMOw79Yw?si=I1rRq7fPx9mPEyjk
-	circleCenter := GetVector2XZ(cylinder.Position)
-	s := rl.Vector2Subtract(rayStart, circleCenter)
-	a := rl.Vector2DotProduct(GetVector2XZ(r.Direction), GetVector2XZ(r.Direction))
-	b := rl.Vector2DotProduct(s, GetVector2XZ(r.Direction))
-	c := rl.Vector2DotProduct(s, s) - (cylinder.Radius * cylinder.Radius)
-	h := b*b - (a * c)
-	if h < 0 {
-		return nil, 0
-	}
-	h = math.Sqrt(h)
-	t := (-b - h) / a
-	if t < 0 {
-		return nil, 0
-	}
-	point := rl.Vector3Scale(r.Direction, t)
-	point = rl.Vector3Add(point, r.Origin)
-	if point.Y >= cylinder.Position.Y && point.Y <= (cylinder.Position.Y+cylinder.Height) {
-		return &point, t
-	}
+
 	return nil, 0
 }
 
