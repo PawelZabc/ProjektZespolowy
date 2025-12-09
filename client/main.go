@@ -9,9 +9,9 @@ import (
 	"github.com/PawelZabc/ProjektZespolowy/client/assets"
 	"github.com/PawelZabc/ProjektZespolowy/client/config"
 	entities "github.com/PawelZabc/ProjektZespolowy/client/entities"
+	"github.com/PawelZabc/ProjektZespolowy/client/game"
 	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
 	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
-	leveldata "github.com/PawelZabc/ProjektZespolowy/shared/level_data"
 	udp_data "github.com/PawelZabc/ProjektZespolowy/shared/udp_data"
 	math "github.com/chewxy/math32"
 
@@ -79,18 +79,9 @@ func main() {
 		}
 	}()
 
-	objects := []*entities.Object{}
+	// objects := []*entities.Object{}
 	//create objects
-	object := entities.CreateCylinderObject(rl.NewVector3(1, 1, 0), 0.5, 1)
-	objects = append(objects, &object)
-	object2 := entities.CreateCubeObject(rl.NewVector3(-3, 0, 6), 6, 1, 2)
-	objects = append(objects, &object2)
-	floor := entities.CreatePlaneObject(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
-	objects = append(objects, &floor)
-	ceiling := entities.CreatePlaneObject(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
-	objects = append(objects, &ceiling)
 
-	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), leveldata.Changes, 3)...)
 	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
 	//end of create objects
 
@@ -101,6 +92,9 @@ func main() {
 	cameraRotationx := float32(-math.Pi / 2)
 	cameraRotationy := float32(-math.Pi / 2) //setup camera rotation to look fowrward
 	rl.SetMousePosition(centerx, centery)    //reset mouse to the middle of the screen
+	rooms := game.LoadRooms()
+	fmt.Println(rooms)
+	currentRoom := 0
 
 	udpSend := udp_data.ClientData{}
 	for !rl.WindowShouldClose() {
@@ -154,15 +148,19 @@ func main() {
 
 		var pointPosition *rl.Vector3 = nil
 		var minLength = float32(0)
-		for _, obj := range objects { //check for nearest intersection point with the player ray
-			if obj != nil {
-				point, length := playerRay.GetCollisionPoint(obj.Collider)
-				if point != nil {
-					if minLength == 0 || length < minLength {
-						minLength = length
-						pointPosition = point
+		for _, object := range rooms[currentRoom].Objects { //check for nearest intersection point with the player ray
+			if object != nil {
+				for _, collider := range object.Colliders {
+					point, length := playerRay.GetCollisionPoint(collider)
+					if point != nil {
+						if minLength == 0 || length < minLength {
+							minLength = length
+							pointPosition = point
+						}
 					}
+
 				}
+
 			}
 		}
 
@@ -175,40 +173,12 @@ func main() {
 			rl.DrawModel(pointObject.Model, rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05)), 1.0, rl.Black)
 		} //draw the intersection point of player ray
 
-		for _, obj := range objects { //draw every object
-			if obj != nil {
-				if plane, ok := obj.Collider.(*s_entities.PlaneCollider); ok {
-					switch plane.Direction { //check which color to draw the plane as
-					case types.DirX:
-						{
-							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Red)
-						}
-					case types.DirY:
-						{
-							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Orange)
-						}
-					case types.DirYminus:
-						{
-							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Green)
-						}
-					case types.DirZ:
-						{
-							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Yellow)
-						}
-					}
-				} else { //if not plane color white
-					rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
-				}
-
-			}
-
-		}
-
 		for _, obj := range players { //draw players
 			if obj != nil {
 				rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
 			}
 		}
+		game.DrawRoom(&rooms[currentRoom]) //draw the room the player is currently in
 
 		rl.EndMode3D()
 		rl.DrawText("Collision demo", 10, 10, 20, rl.Black)

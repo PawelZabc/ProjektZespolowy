@@ -7,9 +7,9 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
+	"github.com/PawelZabc/ProjektZespolowy/server/game"
 	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
 	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
-	leveldata "github.com/PawelZabc/ProjektZespolowy/shared/level_data"
 	udp_data "github.com/PawelZabc/ProjektZespolowy/shared/udp_data"
 )
 
@@ -31,18 +31,9 @@ func main() {
 
 	clients := make(map[string]*s_entities.Player) //create player map
 
-	//create objects
-	objects := make([]types.Collider, 0, 100)
-	floor := s_entities.NewPlaneCollider(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
-	objects = append(objects, floor)
-	objects = append(objects, s_entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), leveldata.Changes, 3)...)
-	object := s_entities.NewCylinderCollider(rl.NewVector3(1, 1, 0), 0.5, 1)
-	objects = append(objects, object)
-	object2 := s_entities.NewCubeCollider(rl.NewVector3(-3, 0, 6), 6, 1, 2)
-	objects = append(objects, object2)
-	ceiling := s_entities.NewPlaneCollider(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
-	objects = append(objects, ceiling)
-	//end of create objects
+	rooms := game.LoadRooms() //load rooms
+	objects := rooms[0].Colliders
+
 	numberOFUpdates := int64(0)
 	go func() {
 		buffer := make([]byte, 1024)
