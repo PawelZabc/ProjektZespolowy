@@ -35,6 +35,7 @@ func main() {
 	objects := rooms[0].Colliders
 
 	numberOFUpdates := int64(0)
+	newPlayerId := uint16(0) //create counter for new player id
 	go func() {
 		buffer := make([]byte, 1024)
 		for {
@@ -51,7 +52,9 @@ func main() {
 					Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5 /*add to opts*/, 1 /*add to opts*/), //add to opts
 					Speed:    0.1,                                                                                            //add to opts
 					Address:  clientAddr,
+					Id:       newPlayerId,
 				}
+				newPlayerId++
 				fmt.Println("New client:", clientAddr)
 			} else {
 				player := clients[clientAddr.String()]     //get current player from address
@@ -127,6 +130,7 @@ func main() {
 				if player2.Address != player.Address {
 					players = append(players, udp_data.PlayerData{
 						Position: player2.Collider.GetPosition(),
+						Id:       player.Id,
 					})
 				}
 			}
