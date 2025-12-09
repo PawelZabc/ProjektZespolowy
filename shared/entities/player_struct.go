@@ -35,3 +35,15 @@ func (p *Player) GetPosition() rl.Vector3 {
 func (p *Player) AddPosition(vec rl.Vector3) {
 	p.Collider.AddPosition(vec)
 }
+
+func (p *Player) PushbackFrom(collider types.Collider) {
+	if collider != nil {
+		direction := p.Collider.PushbackFrom(collider)
+		if direction == types.DirYminus {
+			p.IsOnFloor = true
+			p.Velocity.Y = 0
+		} else if direction == types.DirY {
+			p.Velocity.Y = 0
+		}
+	}
+}
