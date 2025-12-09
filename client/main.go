@@ -60,6 +60,7 @@ func main() {
 
 	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1) //create player
 	players := make(map[uint16]*entities.Object)
+	enemy := entities.NewActor(s_entities.NewCylinderCollider(rl.NewVector3(2, 0, 2), 1, 2), rl.Vector3{}, -45, "ghost.glb")
 
 	go func() { //go routine for receving messages
 		buffer := make([]byte, 1024)
@@ -87,6 +88,9 @@ func main() {
 				}
 			}
 			player.Collider.SetPosition(data.Position)
+			enemy.SetPosition(data.Enemy.Position)
+			enemy.Rotation = data.Enemy.Rotation
+			// fmt.Println(data.Position)
 		}
 	}()
 
@@ -190,7 +194,7 @@ func main() {
 			}
 		}
 		game.DrawRoom(&rooms[currentRoom]) //draw the room the player is currently in
-
+		enemy.Draw()
 		rl.EndMode3D()
 		rl.DrawText("Collision demo", 10, 10, 20, rl.Black)
 		rl.EndDrawing()
