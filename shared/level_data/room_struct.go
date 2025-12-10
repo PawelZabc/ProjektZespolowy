@@ -17,4 +17,5 @@ type Object struct {
 	Colliders []types.Collider
 	DrawPoint rl.Vector3
 	Model     string
+	// Texture   string
 }

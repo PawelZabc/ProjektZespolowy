@@ -9,6 +9,12 @@ const (
 	ModelCube = "cube.glb"
 	ModelCylinder = "cylinder.glb"
 	ModelPlane = "plane.glb"
+	ModelRoom = "room.glb"
+)
+
+// Textures from textures/
+const (
+	TexturePlaceholder = "placeholder.png"
 )
 
 // Shaders from shaders/
