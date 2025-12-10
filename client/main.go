@@ -58,9 +58,10 @@ func main() {
 		Projection: rl.CameraPerspective,
 	}
 
-	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1) //create player
-	players := make(map[uint16]*entities.Object)
-	enemy := entities.NewActor(s_entities.NewCylinderCollider(rl.NewVector3(2, 0, 2), 1, 2), rl.Vector3{}, -45, "ghost.glb")
+	playerCollider := s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1)
+	player := game.Object{Colliders: []types.Collider{playerCollider},
+		Model: game.NewModelFromCollider(playerCollider),
+	} //create player
 
 	go func() { //go routine for receving messages
 		buffer := make([]byte, 1024)
@@ -87,17 +88,18 @@ func main() {
 					delete(players, id)
 				}
 			}
-			player.Collider.SetPosition(data.Position)
+			player.Colliders[0].SetPosition(data.Position)
 			enemy.SetPosition(data.Enemy.Position)
 			enemy.Rotation = data.Enemy.Rotation
-			// fmt.Println(data.Position)
 		}
 	}()
 
 	// objects := []*entities.Object{}
 	//create objects
 
-	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
+	pointObject := game.Object{Model: game.NewModelFromCollider(s_entities.NewCubeCollider(rl.Vector3{}, 0.1, 0.1, 0.1)),
+		Color: rl.Black,
+	}
 	//end of create objects
 
 	conn.Write([]byte("hello")) //send hello to server to register address
@@ -168,8 +170,8 @@ func main() {
 			Y: float32(math.Cos(cameraRotationy))}
 		target = rl.Vector3Normalize(target) //create a normal vector based on rotation
 
-		camera.Position = rl.Vector3Add(player.Collider.GetPosition(), rl.NewVector3(0, 0.5 /*ad to opts*/, 0)) //set camera to player position with height offset
-		playerRay := s_entities.Ray{Origin: camera.Position, Direction: target}                                 //change player ray to have the same looking direction as the camera
+		camera.Position = rl.Vector3Add(player.Colliders[0].GetPosition(), rl.NewVector3(0, 0.5 /*ad to opts*/, 0)) //set camera to player position with height offset
+		playerRay := s_entities.Ray{Origin: camera.Position, Direction: target}                                     //change player ray to have the same looking direction as the camera
 		target = rl.Vector3Add(target, camera.Position)
 		camera.Target = target //set camera target
 
@@ -203,7 +205,8 @@ func main() {
 		rl.BeginMode3D(camera)
 
 		if pointPosition != nil {
-			rl.DrawModel(pointObject.Model, rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05)), 1.0, rl.Black)
+			pointObject.DrawPoint = rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05))
+			pointObject.Draw()
 		} //draw the intersection point of player ray
 
 		for _, obj := range players { //draw players
