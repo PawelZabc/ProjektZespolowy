@@ -121,33 +121,40 @@ func main() {
 
 	}
 
-	go func() { //update 60 times a second
-		ticker := time.NewTicker(time.Second / 60 /*add to opts*/)
-		for range ticker.C {
-			physicsUpdate()
-		}
+	updateFrequency := float64(60)      /*add to opts*/
+	sendUpdatesFrequency := float64(30) /*add to opts*/
+	lastSend := 0
+	ratio := sendUpdatesFrequency / updateFrequency
+	players := make([]udp_data.PlayerData, 0, 10 /*add to opts*/) //max players
 
-	}()
+	ticker := time.NewTicker(time.Second / time.Duration(updateFrequency))
+	for range ticker.C { //update 60 times a second
+		physicsUpdate()
 
-	players := make([]udp_data.PlayerData, 0, 10 /*add to opts*/)
-	ticker := time.NewTicker(time.Second / 30 /*add to opts*/)
-	for range ticker.C { //send data 30 times a second
-
-		for _, player := range clients {
-			players = make([]udp_data.PlayerData, 0, 10) //create a list with every player except itself
-			for _, player2 := range clients {
-				if player2.Address != player.Address {
-					players = append(players, udp_data.PlayerData{
-						Position: player2.Collider.GetPosition(),
-						Id:       player.Id,
-					})
+		if (ratio*float64(numberOFUpdates))-float64(lastSend) >= 1 { //send every 60 seconds
+			lastSend++
+			if numberOFUpdates%2 == 0 {
+				for _, player := range clients {
+					players = make([]udp_data.PlayerData, 0, 10) //create a list with every player except itself
+					for _, player2 := range clients {
+						if player2.Address != player.Address {
+							players = append(players, udp_data.PlayerData{
+								Position: player2.Collider.GetPosition(),
+								Rotation: player2.RotationX,
+								Id:       player2.Id,
+							})
+						}
+					}
+					udpSend := udp_data.ServerData{}
+					udpSend.Position = player.GetPosition()
+					udpSend.Players = players
+					udpSend.Enemy = udp_data.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX}
+					conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address) //send data
 				}
 			}
-			udpSend := udp_data.ServerData{}
-			udpSend.Position = player.GetPosition()
-			udpSend.Players = players
-			udpSend.Enemy = udp_data.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX}
-			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address) //send data
+
 		}
+
 	}
+
 }
