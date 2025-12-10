@@ -15,6 +15,7 @@ type ServerData struct {
 
 type PlayerData struct {
 	Position rl.Vector3
+	Rotation float32
 	Id       uint16
 }
 
@@ -37,6 +38,7 @@ func SerializeServerData(s ServerData) []byte {
 		binary.Write(b, binary.LittleEndian, p.Position.X)
 		binary.Write(b, binary.LittleEndian, p.Position.Y)
 		binary.Write(b, binary.LittleEndian, p.Position.Z)
+		binary.Write(b, binary.LittleEndian, p.Rotation)
 		binary.Write(b, binary.LittleEndian, p.Id)
 	}
 	binary.Write(b, binary.LittleEndian, s.Enemy.Position.X)
@@ -63,6 +65,7 @@ func DeserializeServerData(data []byte) ServerData {
 		binary.Read(b, binary.LittleEndian, &s.Players[i].Position.X)
 		binary.Read(b, binary.LittleEndian, &s.Players[i].Position.Y)
 		binary.Read(b, binary.LittleEndian, &s.Players[i].Position.Z)
+		binary.Read(b, binary.LittleEndian, &s.Players[i].Rotation)
 		binary.Read(b, binary.LittleEndian, &s.Players[i].Id)
 	}
 	binary.Read(b, binary.LittleEndian, &s.Enemy.Position.X)
