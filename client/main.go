@@ -110,19 +110,22 @@ func main() {
 	rooms := game.LoadRooms()
 	fmt.Println(rooms)
 	currentRoom := 0
-
+	lockMouse := false
+	justClicked := false
 	udpSend := udp_data.ClientData{}
 	for !rl.WindowShouldClose() {
-		deltaMouse := rl.GetMousePosition() //check how much mouse has moved
+		if lockMouse {
+			deltaMouse := rl.GetMousePosition() //check how much mouse has moved
 
-		cameraRotationx += (deltaMouse.X - float32(centerx)) / 100 * config.CameraSensivity
-		cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100 * config.CameraSensivity //change camera rotation based on mouse movement
-		if cameraRotationy > config.CameraLockMax {
-			cameraRotationy = config.CameraLockMax
-		} else if cameraRotationy < config.CameraLockMin {
-			cameraRotationy = config.CameraLockMin
+			cameraRotationx += (deltaMouse.X - float32(centerx)) / 100 * config.CameraSensivity
+			cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100 * config.CameraSensivity //change camera rotation based on mouse movement
+			if cameraRotationy > config.CameraLockMax {
+				cameraRotationy = config.CameraLockMax
+			} else if cameraRotationy < config.CameraLockMin {
+				cameraRotationy = config.CameraLockMin
+			}
+			rl.SetMousePosition(centerx, centery)
 		}
-		rl.SetMousePosition(centerx, centery)
 		udpSend = udp_data.ClientData{ //create object to send
 			RotationX: cameraRotationx,
 			RotationY: cameraRotationy,
@@ -139,6 +142,21 @@ func main() {
 		}
 		if rl.IsKeyDown(rl.KeyD /*add to opts*/) {
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveRight)
+		}
+		if rl.IsKeyDown(rl.KeyR /*add to opts*/) && !justClicked {
+			lockMouse = !lockMouse
+			justClicked = true
+			if lockMouse {
+				rl.SetMousePosition(centerx, centery)
+				rl.HideCursor()
+
+			} else {
+				rl.ShowCursor()
+
+			}
+		}
+		if rl.IsKeyReleased(rl.KeyR) {
+			justClicked = false
 		}
 
 		if rl.IsKeyDown(rl.KeySpace /*add to opts*/) {
