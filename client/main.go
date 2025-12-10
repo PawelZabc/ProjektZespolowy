@@ -63,6 +63,18 @@ func main() {
 		Model: game.NewModelFromCollider(playerCollider),
 	} //create player
 
+	players := make(map[uint16]*entities.Actor)
+	createPlayer := func(Id uint16, Position rl.Vector3, Rotation float32) {
+		cylinder := s_entities.NewCylinderCollider(Position, 0.5, 1) //if it doesnt create it
+		players[Id] = entities.NewActor(cylinder, rl.Vector3{}, (Rotation*rl.Rad2deg)+90, assets.ModelPlayer)
+
+	}
+	cylinder := s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1)     //if it doesnt create it
+	testPlayer := entities.NewActor(cylinder, rl.Vector3{}, 0, assets.ModelPlayer) //load player model
+	fmt.Println(testPlayer)
+
+	enemy := entities.NewActor(s_entities.NewCylinderCollider(rl.NewVector3(2, 0, 2), 1, 2), rl.Vector3{}, -45, assets.ModelGhost)
+
 	go func() { //go routine for receving messages
 		buffer := make([]byte, 1024)
 		for {
@@ -75,10 +87,10 @@ func main() {
 			updatedPlayers := make(map[uint16]bool)                                   //create a map to check which players were sent
 			for _, player2 := range data.Players {                                    //update players slice with received players
 				if player2Object, ok := players[player2.Id]; ok { //check if player with that id existed before
-					player2Object.Collider.SetPosition(player2.Position) //if exists update position
+					player2Object.Object.Colliders[0].SetPosition(player2.Position) //if exists update position
+					player2Object.Rotation = (player2.Rotation * rl.Rad2deg) + 90
 				} else {
-					cylinder := entities.CreateCylinderObject(player2.Position, 0.5, 1) //if it doesnt create it
-					players[player2.Id] = &cylinder
+					createPlayer(player2.Id, player2.Position, player2.Rotation)
 				}
 				updatedPlayers[player2.Id] = true //check player as updated
 
@@ -209,11 +221,7 @@ func main() {
 			pointObject.Draw()
 		} //draw the intersection point of player ray
 
-		for _, obj := range players { //draw players
-			if obj != nil {
-				rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
-			}
-		}
+		entities.DrawActorsMap(players)    //draw players
 		game.DrawRoom(&rooms[currentRoom]) //draw the room the player is currently in
 		enemy.Draw()
 		rl.EndMode3D()
