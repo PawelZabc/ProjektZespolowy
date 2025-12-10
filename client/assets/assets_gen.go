@@ -10,6 +10,7 @@ const (
 	ModelCylinder = "cylinder.glb"
 	ModelGhost = "ghost.glb"
 	ModelPlane = "plane.glb"
+	ModelPlayer = "player.glb"
 )
 
 // Shaders from shaders/
