@@ -3,7 +3,6 @@ package game
 import (
 	"github.com/PawelZabc/ProjektZespolowy/client/assets"
 	s_types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
-	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
 	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
 	leveldata "github.com/PawelZabc/ProjektZespolowy/shared/level_data"
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -42,7 +41,7 @@ func ConvertObjectSharedToClient(object *leveldata.Object) *Object {
 	model := rl.Model{}
 	drawPoint := object.DrawPoint
 	if object.Model != "" {
-		model2, _ := assets.GlobalManager.LoadModel(assets.ModelCylinder)
+		model2, _ := assets.GlobalManager.LoadModel(object.Model)
 		model = model2.Data
 	} else { //if the model is empty use the collider as the model
 		model = NewModelFromCollider(object.Colliders[0])
@@ -62,26 +61,26 @@ func ConvertObjectSharedToClient(object *leveldata.Object) *Object {
 }
 
 func GetColorFromCollider(collider s_types.Collider) rl.Color {
-	if plane, ok := collider.(*s_entities.PlaneCollider); ok { //check if the collider is a plane
-		switch plane.Direction { //check which color to draw the plane as
-		case types.DirX:
-			{
-				return rl.Red
-			}
-		case types.DirY:
-			{
-				return rl.Orange
-			}
-		case types.DirYminus:
-			{
-				return rl.Green
-			}
-		case types.DirZ:
-			{
-				return rl.Yellow
-			}
-		}
-	}
+	// if plane, ok := collider.(*s_entities.PlaneCollider); ok { //check if the collider is a plane
+	// 	switch plane.Direction { //check which color to draw the plane as
+	// 	case types.DirX:
+	// 		{
+	// 			return rl.Red
+	// 		}
+	// 	case types.DirY:
+	// 		{
+	// 			return rl.Orange
+	// 		}
+	// 	case types.DirYminus:
+	// 		{
+	// 			return rl.Green
+	// 		}
+	// 	case types.DirZ:
+	// 		{
+	// 			return rl.Yellow
+	// 		}
+	// 	}
+	// }
 	return rl.White //if its not a plane color white
 }
 
