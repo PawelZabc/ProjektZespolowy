@@ -24,10 +24,11 @@ func CreateRoomFromChanges(changes []types.Change, start rl.Vector3, height floa
 	floor, ceiling := MakeFloorAndCeilingForWalls(wallColliders, start.Y, start.Y+height) //create floor and ceiling for the walls
 	wallColliders = append(wallColliders, floor)                                          //add them to colliders
 	wallColliders = append(wallColliders, ceiling)
-	objects := CreateObjectsFromColliders(wallColliders) // convert to objects
+	object := CreateObjectFromColliders(wallColliders, rl.NewVector3(0, 0, 0)) // convert to objects
+	object.Model = "room.glb"
 
 	return Room{
-		Objects: objects,
+		Objects: []*Object{object},
 	}
 }
 

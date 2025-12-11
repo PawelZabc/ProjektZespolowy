@@ -11,6 +11,12 @@ const (
 	ModelGhost = "ghost.glb"
 	ModelPlane = "plane.glb"
 	ModelPlayer = "player.glb"
+	ModelRoom = "room.glb"
+)
+
+// Textures from textures/
+const (
+	TexturePlaceholder = "placeholder.png"
 )
 
 // Shaders from shaders/
