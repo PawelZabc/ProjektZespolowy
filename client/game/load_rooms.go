@@ -94,8 +94,12 @@ func DrawRoom(room *Room) {
 
 func DrawObjects(objects []*Object) {
 	for _, object := range objects {
-		rl.DrawModel(object.Model, object.DrawPoint, 1, object.Color)
+		object.Draw()
 	}
+}
+
+func (o Object) Draw() {
+	rl.DrawModel(o.Model, o.DrawPoint, 1, o.Color)
 }
 
 func NewModelFromCollider(collider s_types.Collider) rl.Model {
