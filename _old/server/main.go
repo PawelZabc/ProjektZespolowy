@@ -7,9 +7,9 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
+	"github.com/PawelZabc/ProjektZespolowy/server/game"
 	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
 	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
-	leveldata "github.com/PawelZabc/ProjektZespolowy/shared/level_data"
 	udp_data "github.com/PawelZabc/ProjektZespolowy/shared/udp_data"
 )
 
@@ -30,20 +30,16 @@ func main() {
 	//end creating connection
 
 	clients := make(map[string]*s_entities.Player) //create player map
+	enemy := &s_entities.Enemy{                    //create the enemy
+		Collider: s_entities.NewCylinderCollider(rl.NewVector3(20, 0, 15), 1 /*add to opts*/, 2 /*add to opts*/), //add to opts
+		Speed:    0.05,                                                                                           //add to opts
+	}
 
-	//create objects
-	objects := make([]types.Collider, 0, 100)
-	floor := s_entities.NewPlaneCollider(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
-	objects = append(objects, floor)
-	objects = append(objects, s_entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), leveldata.Changes, 3)...)
-	object := s_entities.NewCylinderCollider(rl.NewVector3(1, 1, 0), 0.5, 1)
-	objects = append(objects, object)
-	object2 := s_entities.NewCubeCollider(rl.NewVector3(-3, 0, 6), 6, 1, 2)
-	objects = append(objects, object2)
-	ceiling := s_entities.NewPlaneCollider(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
-	objects = append(objects, ceiling)
-	//end of create objects
+	rooms := game.LoadRooms() //load rooms
+	objects := rooms[0].Colliders
+
 	numberOFUpdates := int64(0)
+	newPlayerId := uint16(0) //create counter for new player id
 	go func() {
 		buffer := make([]byte, 1024)
 		for {
@@ -60,7 +56,9 @@ func main() {
 					Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5 /*add to opts*/, 1 /*add to opts*/), //add to opts
 					Speed:    0.1,                                                                                            //add to opts
 					Address:  clientAddr,
+					Id:       newPlayerId,
 				}
+				newPlayerId++
 				fmt.Println("New client:", clientAddr)
 			} else {
 				player := clients[clientAddr.String()]     //get current player from address
@@ -94,55 +92,69 @@ func main() {
 	gravity := float32(0.005) //set gravity ,add to opts
 	physicsUpdate := func() {
 		numberOFUpdates++
+		players := make([]*s_entities.Player, 0, len(clients))
 		for _, player := range clients {
 			if numberOFUpdates-player.LastMessage > 200 /*add to opts*/ { //if last message was 200 updates ago disconnect player
 				fmt.Println("Client disconnected: ", player.Address.String())
 				delete(clients, player.Address.String())
 				continue
 			}
-			player.Velocity.Y -= gravity //aply gravity
+			players = append(players, player)
+			player.Velocity.Y -= gravity //apply gravity
 			player.Move()
 			player.IsOnFloor = false
 			for _, obj := range objects { //collide with every object
-				if obj != nil {
-					direction := player.Collider.PushbackFrom(obj)
-					if direction == types.DirYminus {
-						player.IsOnFloor = true
-						player.Velocity.Y = 0
-					} else if direction == types.DirY {
-						player.Velocity.Y = 0
-					}
-				}
+				player.PushbackFrom(obj)
+			}
+			player.PushbackFrom(enemy.Collider)
+		}
+		enemy.UpdateTarget(players)
+		enemy.Move()
+		for _, obj := range objects { //collide with every object
+			if obj != nil {
+				enemy.Collider.PushbackFrom(obj)
 			}
 		}
-
-	}
-
-	go func() { //update 60 times a second
-		ticker := time.NewTicker(time.Second / 60 /*add to opts*/)
-		for range ticker.C {
-			physicsUpdate()
-		}
-
-	}()
-
-	players := make([]udp_data.PlayerData, 0, 10 /*add to opts*/)
-	ticker := time.NewTicker(time.Second / 30 /*add to opts*/)
-	for range ticker.C { //send data 30 times a second
-
 		for _, player := range clients {
-			players = make([]udp_data.PlayerData, 0, 10) //create a list with every player except itself
-			for _, player2 := range clients {
-				if player2.Address != player.Address {
-					players = append(players, udp_data.PlayerData{
-						Position: player2.Collider.GetPosition(),
-					})
+			enemy.Collider.PushbackFrom(player.Collider)
+		}
+
+	}
+
+	updateFrequency := float64(60)      /*add to opts*/
+	sendUpdatesFrequency := float64(30) /*add to opts*/
+	lastSend := 0
+	ratio := sendUpdatesFrequency / updateFrequency
+	players := make([]udp_data.PlayerData, 0, 10 /*add to opts*/) //max players
+
+	ticker := time.NewTicker(time.Second / time.Duration(updateFrequency))
+	for range ticker.C { //update 60 times a second
+		physicsUpdate()
+
+		if (ratio*float64(numberOFUpdates))-float64(lastSend) >= 1 { //send every 60 seconds
+			lastSend++
+			if numberOFUpdates%2 == 0 {
+				for _, player := range clients {
+					players = make([]udp_data.PlayerData, 0, 10) //create a list with every player except itself
+					for _, player2 := range clients {
+						if player2.Address != player.Address {
+							players = append(players, udp_data.PlayerData{
+								Position: player2.Collider.GetPosition(),
+								Rotation: player2.RotationX,
+								Id:       player2.Id,
+							})
+						}
+					}
+					udpSend := udp_data.ServerData{}
+					udpSend.Position = player.GetPosition()
+					udpSend.Players = players
+					udpSend.Enemy = udp_data.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX}
+					conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address) //send data
 				}
 			}
-			udpSend := udp_data.ServerData{}
-			udpSend.Position = player.GetPosition()
-			udpSend.Players = players
-			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address) //send data
+
 		}
+
 	}
+
 }

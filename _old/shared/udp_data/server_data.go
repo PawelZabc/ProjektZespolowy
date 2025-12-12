@@ -10,19 +10,27 @@ import (
 type ServerData struct {
 	Players  []PlayerData
 	Position rl.Vector3
+	Enemy    EnemyData
 }
 
 type PlayerData struct {
 	Position rl.Vector3
+	Rotation float32
+	Id       uint16
+}
+
+type EnemyData struct {
+	Position rl.Vector3
+	Rotation float32
 }
 
 func SerializeServerData(s ServerData) []byte {
-	// 4 bytes for number of players + 12 bytes for position + players
-	size := 4 + 12 + len(s.Players)*12
+	// 4 bytes for number of players + 12 bytes for position * players + 12 bytes + 4 bytes for enemy
+	size := 4 + 12 + len(s.Players)*12 + 16
 	buf := make([]byte, 0, size)
 	b := bytes.NewBuffer(buf)
 
-	binary.Write(b, binary.LittleEndian, uint32(len(s.Players)))
+	binary.Write(b, binary.LittleEndian, uint8(len(s.Players)))
 	binary.Write(b, binary.LittleEndian, s.Position.X)
 	binary.Write(b, binary.LittleEndian, s.Position.Y)
 	binary.Write(b, binary.LittleEndian, s.Position.Z)
@@ -30,7 +38,13 @@ func SerializeServerData(s ServerData) []byte {
 		binary.Write(b, binary.LittleEndian, p.Position.X)
 		binary.Write(b, binary.LittleEndian, p.Position.Y)
 		binary.Write(b, binary.LittleEndian, p.Position.Z)
+		binary.Write(b, binary.LittleEndian, p.Rotation)
+		binary.Write(b, binary.LittleEndian, p.Id)
 	}
+	binary.Write(b, binary.LittleEndian, s.Enemy.Position.X)
+	binary.Write(b, binary.LittleEndian, s.Enemy.Position.Y)
+	binary.Write(b, binary.LittleEndian, s.Enemy.Position.Z)
+	binary.Write(b, binary.LittleEndian, s.Enemy.Rotation)
 
 	return b.Bytes()
 }
@@ -39,7 +53,7 @@ func DeserializeServerData(data []byte) ServerData {
 	b := bytes.NewReader(data)
 	var s ServerData
 
-	var count uint32
+	var count uint8
 	binary.Read(b, binary.LittleEndian, &count)
 
 	binary.Read(b, binary.LittleEndian, &s.Position.X)
@@ -51,7 +65,13 @@ func DeserializeServerData(data []byte) ServerData {
 		binary.Read(b, binary.LittleEndian, &s.Players[i].Position.X)
 		binary.Read(b, binary.LittleEndian, &s.Players[i].Position.Y)
 		binary.Read(b, binary.LittleEndian, &s.Players[i].Position.Z)
+		binary.Read(b, binary.LittleEndian, &s.Players[i].Rotation)
+		binary.Read(b, binary.LittleEndian, &s.Players[i].Id)
 	}
+	binary.Read(b, binary.LittleEndian, &s.Enemy.Position.X)
+	binary.Read(b, binary.LittleEndian, &s.Enemy.Position.Y)
+	binary.Read(b, binary.LittleEndian, &s.Enemy.Position.Z)
+	binary.Read(b, binary.LittleEndian, &s.Enemy.Rotation)
 
 	return s
 }

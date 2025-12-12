@@ -8,15 +8,7 @@ const (
 	ModelBarrel2 = "barrel2.glb"
 	ModelCube = "cube.glb"
 	ModelCylinder = "cylinder.glb"
-	ModelGhost = "ghost.glb"
 	ModelPlane = "plane.glb"
-	ModelPlayer = "player.glb"
-	ModelRoom = "room.glb"
-)
-
-// Textures from textures/
-const (
-	TexturePlaceholder = "placeholder.png"
 )
 
 // Shaders from shaders/

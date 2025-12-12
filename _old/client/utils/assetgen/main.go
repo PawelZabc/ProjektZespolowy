@@ -111,14 +111,25 @@ func generate() error {
 		Categories: assetCategories,
 	}
 
-	outputPath := filepath.Join(assetsPath, "assets_gen.go")
+	outputPath := filepath.Join("../shared/assets", "assets_gen.go")
+	outputPath2 := filepath.Join(assetsPath, "assets_gen.go")
 	outFile, err := os.Create(outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
 	}
 	defer outFile.Close()
 
+	outFile2, err := os.Create(outputPath2)
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	defer outFile2.Close()
+
 	if err := tmpl.Execute(outFile, data); err != nil {
+		return fmt.Errorf("failed to execute template: %w", err)
+	}
+
+	if err := tmpl.Execute(outFile2, data); err != nil {
 		return fmt.Errorf("failed to execute template: %w", err)
 	}
 
