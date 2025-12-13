@@ -151,9 +151,10 @@ func main() {
 					}
 					udpSend := udp_data.ServerData{}
 					udpSend.Position = player.GetPosition()
+					udpSend.Hp = player.Hp
 					udpSend.Players = players
-					udpSend.Enemy = udp_data.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX}
-					conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address) //send data
+					udpSend.Enemy = udp_data.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX, Animation: uint8(enemy.State)} //currently send enemy state instead of animation until animations will be added
+					conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address)                                                               //send data
 				}
 			}
 
