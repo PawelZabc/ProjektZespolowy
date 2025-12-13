@@ -93,6 +93,15 @@ func main() {
 	// objects := []*entities.Object{}
 	//create objects
 
+	shader := rl.LoadShader("assets/shaders/lighting_v2.vs", "assets/shaders/lighting_v2.fs")
+
+	// Set view position uniform
+	*shader.Locs = rl.GetShaderLocation(shader, "viewPos")
+
+	ambientLoc := rl.GetShaderLocation(shader, "ambient")
+	ambient := []float32{0.1, 0.1, 0.1, 1.0}
+	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
+
 	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
 	//end of create objects
 
@@ -103,9 +112,40 @@ func main() {
 	cameraRotationx := float32(-math.Pi / 2)
 	cameraRotationy := float32(-math.Pi / 2) //setup camera rotation to look fowrward
 	rl.SetMousePosition(centerx, centery)    //reset mouse to the middle of the screen
-	rooms := game.LoadRooms()
+	rooms := game.LoadRooms(shader)
 	fmt.Println(rooms)
 	currentRoom := 0
+
+	// white light
+	light1 := entities.NewLight(
+		entities.LightTypePoint,
+		rl.NewVector3(0, 2.9, 0), // light position
+		rl.NewVector3(0, 0, 0),   // target (unused for point light)
+		rl.White,                 // light color
+		shader,
+	)
+	light1.UpdateValues()
+
+	// white light
+	light2 := entities.NewLight(
+		entities.LightTypePoint,
+		rl.NewVector3(5, 2.9, -5), // light position
+		rl.NewVector3(0, 0, 0),    // target (unused for point light)
+		rl.White,                  // light color
+		shader,
+	)
+	light2.UpdateValues()
+
+	// white light
+	light3 := entities.NewLight(
+		entities.LightTypePoint,
+		rl.NewVector3(5, 2.9, 5), // light position
+		rl.NewVector3(0, 0, 0),   // target (unused for point light)
+		rl.White,                 // light color
+		shader,
+	)
+	light3.Enabled = 1 // ON is default
+	light3.UpdateValues()
 
 	udpSend := udp_data.ClientData{}
 	for !rl.WindowShouldClose() {
@@ -174,11 +214,22 @@ func main() {
 
 			}
 		}
+		cameraPos := []float32{
+			camera.Position.X,
+			camera.Position.Y,
+			camera.Position.Z,
+		}
+		rl.SetShaderValue(shader, *shader.Locs, cameraPos, rl.ShaderUniformVec3)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
 
 		rl.BeginMode3D(camera)
+
+		// light spheres so it wouldnt shine out of nowhere
+		rl.DrawSphereEx(light1.Position, 0.2, 8, 8, rl.White)
+		rl.DrawSphereEx(light2.Position, 0.2, 8, 8, rl.White)
+		rl.DrawSphereEx(light3.Position, 0.2, 8, 8, rl.White)
 
 		if pointPosition != nil {
 			rl.DrawModel(pointObject.Model, rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05)), 1.0, rl.Black)
@@ -186,6 +237,7 @@ func main() {
 
 		for _, obj := range players { //draw players
 			if obj != nil {
+				obj.Model.Materials.Shader = shader
 				rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
 			}
 		}
