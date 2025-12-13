@@ -11,8 +11,6 @@ type Room struct {
 	VisibleRooms  []*Room   //rooms visible that need to be rendered while in the room
 }
 
-
-
 type RoomTWO struct {
 	Objects       []*ObjectTWO //objects and walls in that room
 	SharedObjects []*ObjectTWO //objects shared with visible rooms
@@ -22,7 +20,7 @@ type RoomTWO struct {
 }
 
 type ObjectTWO struct {
-	Colliders []colliders.Collider
+	Colliders []colliders.Collider // TODO: possibly to delete if position provided
 	DrawPoint rl.Vector3
 	Model     string
 	// Texture   string
