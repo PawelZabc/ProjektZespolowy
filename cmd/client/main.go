@@ -10,10 +10,11 @@ import (
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/protocol"
-	types "github.com/PawelZabc/ProjektZespolowy/internal/shared"
-	math "github.com/chewxy/math32"
+	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
+	"github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -58,8 +59,22 @@ func main() {
 		Projection: rl.CameraPerspective,
 	}
 
-	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1) //create player
-	players := make([]*entities.Object, 0, 12)
+	playerCollider := colliders.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1)
+	player := entities.Object{Colliders: []colliders.Collider{playerCollider}, // TODO: fix object
+		Model: levels.NewModelFromCollider(playerCollider), // TODO: fix object
+	} //create player
+
+	players := make(map[uint16]*entities.Actor)
+	createPlayer := func(Id uint16, Position rl.Vector3, Rotation float32) {
+		cylinder := colliders.NewCylinderCollider(Position, 0.5, 1) //if it doesnt create it
+		players[Id] = entities.NewActor(cylinder, rl.Vector3{}, (Rotation*rl.Rad2deg)+90, assets.ModelPlayer)
+
+	}
+	cylinder := colliders.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1)      //if it doesnt create it
+	testPlayer := entities.NewActor(cylinder, rl.Vector3{}, 0, assets.ModelPlayer) //load player model
+	fmt.Println(testPlayer)
+
+	enemy := entities.NewActor(colliders.NewCylinderCollider(rl.NewVector3(15, 0, 15), 1, 2), rl.Vector3{}, -45, assets.ModelGhost)
 
 	go func() { //go routine for receving messages
 		buffer := make([]byte, 1024)
@@ -69,80 +84,114 @@ func main() {
 			if err != nil {
 				continue
 			}
-			players = make([]*entities.Object, 0, 12)                                 //empty the player slice
 			var data protocol.ServerData = protocol.DeserializeServerData(buffer[:n]) //deserialize data
-			for _, player2 := range data.Players {                                    //fill players slice with received players
-				playerObject := entities.CreateCylinderObject(player2.Position, 0.5, 1)
-				players = append(players, &playerObject)
+			updatedPlayers := make(map[uint16]bool)                                   //create a map to check which players were sent
+			for _, player2 := range data.Players {                                    //update players slice with received players
+				if player2Object, ok := players[player2.Id]; ok { //check if player with that id existed before
+					player2Object.Object.Colliders[0].SetPosition(player2.Position) //if exists update position
+					player2Object.Rotation = (player2.Rotation * rl.Rad2deg)
+				} else {
+					createPlayer(player2.Id, player2.Position, player2.Rotation)
+				}
+				updatedPlayers[player2.Id] = true //check player as updated
+
 			}
-			player.Collider.SetPosition(data.Position)
+			for id, _ := range players { //if a player wasnt updated,its no longer at the server so delete it
+				if !updatedPlayers[id] {
+					delete(players, id)
+				}
+			}
+			player.Colliders[0].SetPosition(data.Position)
+			enemy.SetPosition(data.Enemy.Position)
+			enemy.Rotation = -data.Enemy.Rotation
 		}
 	}()
 
-	objects := []*entities.Object{}
+	// objects := []*entities.Object{}
 	//create objects
-	object := entities.CreateCylinderObject(rl.NewVector3(1, 1, 0), 0.5, 1)
-	objects = append(objects, &object)
-	object2 := entities.CreateCubeObject(rl.NewVector3(-3, 0, 6), 6, 1, 2)
-	objects = append(objects, &object2)
-	floor := entities.CreatePlaneObject(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
-	objects = append(objects, &floor)
-	ceiling := entities.CreatePlaneObject(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
-	objects = append(objects, &ceiling)
 
-	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), levels.BasicLevel, 3)...)
-	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
+	// TODO: fix Object
+	pointObject := entities.Object{Model: levels.NewModelFromCollider(colliders.NewCubeCollider(rl.Vector3{}, 0.1, 0.1, 0.1)),
+		Color: rl.Black,
+	}
+	side1Object := entities.Object{Model: levels.NewModelFromCollider(colliders.NewCylinderCollider(rl.Vector3{}, 0.1, 0.2)),
+		Color: rl.Black,
+	}
+	side2Object := entities.Object{Model: levels.NewModelFromCollider(colliders.NewCylinderCollider(rl.Vector3{}, 0.1, 0.2)),
+		Color: rl.Black,
+	}
 	//end of create objects
 
 	conn.Write([]byte("hello")) //send hello to server to register address
 	rl.HideCursor()
 	centerx := rl.GetScreenWidth() / 2
 	centery := rl.GetScreenHeight() / 2 //calculate center of the screen
-	cameraRotationx := float32(-math.Pi / 2)
-	cameraRotationy := float32(-math.Pi / 2) //setup camera rotation to look fowrward
-	rl.SetMousePosition(centerx, centery)    //reset mouse to the middle of the screen
+	cameraRotationx := float32(-math32.Pi / 2)
+	cameraRotationy := float32(-math32.Pi / 2) //setup camera rotation to look fowrward
+	rl.SetMousePosition(centerx, centery)      //reset mouse to the middle of the screen
+	rooms := levels.LoadRooms()                // TODO: fix object
 
+	currentRoom := 0
+	lockMouse := false
+	justClicked := false
 	udpSend := protocol.ClientData{}
 	for !rl.WindowShouldClose() {
-		deltaMouse := rl.GetMousePosition() //check how much mouse has moved
+		if lockMouse {
+			deltaMouse := rl.GetMousePosition() //check how much mouse has moved
 
-		cameraRotationx += (deltaMouse.X - float32(centerx)) / 100 * config.CameraSensivity
-		cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100 * config.CameraSensivity //change camera rotation based on mouse movement
-		if cameraRotationy > config.CameraLockMax {
-			cameraRotationy = config.CameraLockMax
-		} else if cameraRotationy < config.CameraLockMin {
-			cameraRotationy = config.CameraLockMin
+			cameraRotationx += (deltaMouse.X - float32(centerx)) / 100 * config.CameraSensivity
+			cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100 * config.CameraSensivity //change camera rotation based on mouse movement
+			if cameraRotationy > config.CameraLockMax {
+				cameraRotationy = config.CameraLockMax
+			} else if cameraRotationy < config.CameraLockMin {
+				cameraRotationy = config.CameraLockMin
+			}
+			rl.SetMousePosition(centerx, centery)
 		}
-		rl.SetMousePosition(centerx, centery)
 		udpSend = protocol.ClientData{ //create object to send
 			RotationX: cameraRotationx,
 			RotationY: cameraRotationy,
-			Inputs:    make([]types.PlayerAction, 0, 5),
+			Inputs:    make([]shared.PlayerAction, 0, 5),
 		}
 		if rl.IsKeyDown(rl.KeyW /*add to opts*/) { //add player actions to udpSend based on inputs
-			udpSend.Inputs = append(udpSend.Inputs, types.MoveForward)
+			udpSend.Inputs = append(udpSend.Inputs, shared.MoveForward)
 		}
 		if rl.IsKeyDown(rl.KeyS /*add to opts*/) {
-			udpSend.Inputs = append(udpSend.Inputs, types.MoveBackward)
+			udpSend.Inputs = append(udpSend.Inputs, shared.MoveBackward)
 		}
 		if rl.IsKeyDown(rl.KeyA /*add to opts*/) {
-			udpSend.Inputs = append(udpSend.Inputs, types.MoveLeft)
+			udpSend.Inputs = append(udpSend.Inputs, shared.MoveLeft)
 		}
 		if rl.IsKeyDown(rl.KeyD /*add to opts*/) {
-			udpSend.Inputs = append(udpSend.Inputs, types.MoveRight)
+			udpSend.Inputs = append(udpSend.Inputs, shared.MoveRight)
+		}
+		if rl.IsKeyDown(rl.KeyR /*add to opts*/) && !justClicked {
+			lockMouse = !lockMouse
+			justClicked = true
+			if lockMouse {
+				rl.SetMousePosition(centerx, centery)
+				rl.HideCursor()
+
+			} else {
+				rl.ShowCursor()
+
+			}
+		}
+		if rl.IsKeyReleased(rl.KeyR) {
+			justClicked = false
 		}
 
 		if rl.IsKeyDown(rl.KeySpace /*add to opts*/) {
-			udpSend.Inputs = append(udpSend.Inputs, types.Jump)
+			udpSend.Inputs = append(udpSend.Inputs, shared.Jump)
 		}
 
-		target := rl.Vector3{X: float32(math.Sin(cameraRotationy) * math.Cos(cameraRotationx)),
-			Z: float32(math.Sin(cameraRotationy) * math.Sin(cameraRotationx)),
-			Y: float32(math.Cos(cameraRotationy))}
+		target := rl.Vector3{X: float32(math32.Sin(cameraRotationy) * math32.Cos(cameraRotationx)),
+			Z: float32(math32.Sin(cameraRotationy) * math32.Sin(cameraRotationx)),
+			Y: float32(math32.Cos(cameraRotationy))}
 		target = rl.Vector3Normalize(target) //create a normal vector based on rotation
 
-		camera.Position = rl.Vector3Add(player.Collider.GetPosition(), rl.NewVector3(0, 0.5 /*ad to opts*/, 0)) //set camera to player position with height offset
-		playerRay := colliders.Ray{Origin: camera.Position, Direction: target}                                  //change player ray to have the same looking direction as the camera
+		camera.Position = rl.Vector3Add(player.Colliders[0].GetPosition(), rl.NewVector3(0, 0.5 /*ad to opts*/, 0)) //set camera to player position with height offset
+		playerRay := colliders.Ray{Origin: camera.Position, Direction: target}                                      //change player ray to have the same looking direction as the camera
 		target = rl.Vector3Add(target, camera.Position)
 		camera.Target = target //set camera target
 
@@ -154,15 +203,19 @@ func main() {
 
 		var pointPosition *rl.Vector3 = nil
 		var minLength = float32(0)
-		for _, obj := range objects { //check for nearest intersection point with the player ray
-			if obj != nil {
-				point, length := playerRay.GetCollisionPoint(obj.Collider)
-				if point != nil {
-					if minLength == 0 || length < minLength {
-						minLength = length
-						pointPosition = point
+		for _, object := range rooms[currentRoom].Objects { //check for nearest intersection point with the player ray
+			if object != nil {
+				for _, collider := range object.Colliders {
+					point, length := playerRay.GetCollisionPoint(collider)
+					if point != nil {
+						if minLength == 0 || length < minLength {
+							minLength = length
+							pointPosition = point
+						}
 					}
+
 				}
+
 			}
 		}
 
@@ -171,45 +224,26 @@ func main() {
 
 		rl.BeginMode3D(camera)
 
+		if cylinder, ok := rooms[currentRoom].Objects[1].Colliders[0].(*colliders.CylinderCollider); ok {
+			pos1, pos2 := cylinder.GetSides(physics.GetVector2XZ(player.Colliders[0].GetPosition()))
+			drawPoint1 := rl.Vector3Add(physics.GetVector3FromXZ(pos1), cylinder.Position)
+			drawPoint1.Y += 0.5
+			drawPoint2 := rl.Vector3Add(physics.GetVector3FromXZ(pos2), cylinder.Position)
+			drawPoint2.Y += 0.5
+			side1Object.DrawPoint = drawPoint1
+			side1Object.Draw()
+			side2Object.DrawPoint = drawPoint2
+			side2Object.Draw()
+		}
+
 		if pointPosition != nil {
-			rl.DrawModel(pointObject.Model, rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05)), 1.0, rl.Black)
+			pointObject.DrawPoint = rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05))
+			pointObject.Draw()
 		} //draw the intersection point of player ray
 
-		for _, obj := range objects { //draw every object
-			if obj != nil {
-				if plane, ok := obj.Collider.(*colliders.PlaneCollider); ok {
-					switch plane.Direction { //check which color to draw the plane as
-					case types.DirX:
-						{
-							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Red)
-						}
-					case types.DirY:
-						{
-							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Orange)
-						}
-					case types.DirYminus:
-						{
-							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Green)
-						}
-					case types.DirZ:
-						{
-							rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.Yellow)
-						}
-					}
-				} else { //if not plane color white
-					rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
-				}
-
-			}
-
-		}
-
-		for _, obj := range players { //draw players
-			if obj != nil {
-				rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
-			}
-		}
-
+		entities.DrawActorsMap(players)      //draw players
+		levels.DrawRoom(&rooms[currentRoom]) //draw the room the player is currently in
+		enemy.Draw()
 		rl.EndMode3D()
 		rl.DrawText("Collision demo", 10, 10, 20, rl.Black)
 		rl.EndDrawing()

@@ -1,9 +1,9 @@
 package colliders
 
 import (
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
-	math "github.com/chewxy/math32"
-
+	"github.com/chewxy/math32"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -14,13 +14,13 @@ type CylinderCollider struct {
 }
 
 func (c CylinderCollider) GetSides(position rl.Vector2) (rl.Vector2, rl.Vector2) {
-	cylinderPosition := GetVector2XZ(c.Position)
+	cylinderPosition := physics.GetVector2XZ(c.Position)
 	difference := rl.Vector2Subtract(cylinderPosition, position)
 	normalised := rl.Vector2Normalize(difference)
 	return rl.Vector2Scale(rl.NewVector2(-normalised.Y, normalised.X), c.Radius), rl.Vector2Scale(rl.NewVector2(normalised.Y, -normalised.X), c.Radius)
 }
 
-func (c CylinderCollider) CollidesWith(c2 types.Collider) bool {
+func (c CylinderCollider) CollidesWith(c2 Collider) bool {
 	if cylinder, ok := c2.(*CylinderCollider); ok {
 		if rl.Vector2Distance(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
 			rl.Vector2{X: cylinder.Position.X, Y: cylinder.Position.Z}) < (c.Radius+cylinder.Radius) &&
@@ -29,8 +29,8 @@ func (c CylinderCollider) CollidesWith(c2 types.Collider) bool {
 		}
 
 	} else if cube, ok := c2.(*CubeCollider); ok {
-		if rl.Vector2Distance(rl.Vector2{X: math.Min(cube.Position.X+cube.SizeX, math.Max(cube.Position.X, c.Position.X)),
-			Y: math.Min(cube.Position.Z+cube.SizeZ, math.Max(cube.Position.Z, c.Position.Z))},
+		if rl.Vector2Distance(rl.Vector2{X: math32.Min(cube.Position.X+cube.SizeX, math32.Max(cube.Position.X, c.Position.X)),
+			Y: math32.Min(cube.Position.Z+cube.SizeZ, math32.Max(cube.Position.Z, c.Position.Z))},
 			rl.Vector2{X: c.Position.X, Y: c.Position.Z}) <= c.Radius &&
 			cube.Position.Y <= c.Position.Y+c.Height && cube.Position.Y+cube.SizeY >= c.Position.Y {
 			return true
@@ -67,8 +67,8 @@ func (c *CylinderCollider) PushbackFrom(c2 Collider) shared.Direction {
 
 func (c *CylinderCollider) PushbackFromCube(cube *CubeCollider) shared.Direction {
 	diffrence := rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
-		rl.Vector2{X: math.Min(cube.Position.X+cube.SizeX, math.Max(cube.Position.X, c.Position.X)),
-			Y: math.Min(cube.Position.Z+cube.SizeZ, math.Max(cube.Position.Z, c.Position.Z))})
+		rl.Vector2{X: math32.Min(cube.Position.X+cube.SizeX, math32.Max(cube.Position.X, c.Position.X)),
+			Y: math32.Min(cube.Position.Z+cube.SizeZ, math32.Max(cube.Position.Z, c.Position.Z))})
 	distanceXZ := rl.Vector2Length(diffrence) - (c.Radius)
 	distanceY1 := c.Position.Y - (cube.Position.Y + cube.SizeY)
 	distanceY2 := cube.Position.Y - (c.Position.Y + c.Height)
@@ -100,13 +100,13 @@ func (c *CylinderCollider) PushbackFromPlane(plane *PlaneCollider) shared.Direct
 			var diffrence rl.Vector2
 			if plane.Direction == shared.DirZ || plane.Direction == shared.DirZminus {
 				diffrence = rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
-					rl.Vector2{X: math.Min(plane.Position.X+plane.Width, math.Max(plane.Position.X, c.Position.X)),
+					rl.Vector2{X: math32.Min(plane.Position.X+plane.Width, math32.Max(plane.Position.X, c.Position.X)),
 						Y: plane.Position.Z,
 					})
 			} else {
 				diffrence = rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
 					rl.Vector2{X: plane.Position.X,
-						Y: math.Min(plane.Position.Z+plane.Width, math.Max(plane.Position.Z, c.Position.Z)),
+						Y: math32.Min(plane.Position.Z+plane.Width, math32.Max(plane.Position.Z, c.Position.Z)),
 					})
 			}
 			distanceXZ := rl.Vector2Length(diffrence) - (c.Radius)
@@ -123,8 +123,8 @@ func (c *CylinderCollider) PushbackFromPlane(plane *PlaneCollider) shared.Direct
 	case shared.DirY, shared.DirYminus:
 		{
 			diffrence := rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
-				rl.Vector2{X: math.Min(plane.Position.X+plane.Width, math.Max(plane.Position.X, c.Position.X)),
-					Y: math.Min(plane.Position.Z+plane.Height, math.Max(plane.Position.Z, c.Position.Z))})
+				rl.Vector2{X: math32.Min(plane.Position.X+plane.Width, math32.Max(plane.Position.X, c.Position.X)),
+					Y: math32.Min(plane.Position.Z+plane.Height, math32.Max(plane.Position.Z, c.Position.Z))})
 			distanceXZ := rl.Vector2Length(diffrence) - (c.Radius)
 			distanceY1 := c.Position.Y - plane.Position.Y
 			distanceY2 := plane.Position.Y - (c.Position.Y + c.Height)
@@ -182,3 +182,5 @@ func NewCylinderCollider(position rl.Vector3, radius float32, height float32) *C
 		Height:   height,
 	}
 }
+
+var _ Collider = (*CylinderCollider)(nil)

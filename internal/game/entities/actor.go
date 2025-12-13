@@ -2,13 +2,12 @@ package entities
 
 import (
 	"github.com/PawelZabc/ProjektZespolowy/assets"
-	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type Actor struct {
-	levels.Object
+	Object
 	Rotation float32
 	// Animation
 }
@@ -37,7 +36,7 @@ func NewActor(collider colliders.Collider, drawPoint rl.Vector3, rotation float3
 	// fmt.Println("Pre Load Actor Model !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	model, _ := assets.GlobalManager.LoadModel(modelName)
 	// fmt.Println("Load Actor Model Error", err)
-	object := levels.Object{Model: model.Data, DrawPoint: drawPoint, Color: rl.White, Colliders: []colliders.Collider{collider}}
+	object := Object{Model: model.Data, DrawPoint: drawPoint, Color: rl.White, Colliders: []colliders.Collider{collider}}
 	actor := Actor{Object: object, Rotation: rotation}
 	return &actor
 }

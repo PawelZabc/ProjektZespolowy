@@ -1,21 +1,24 @@
 package levels
 
+// CLIENT LOAD ROOMS
+
 import (
 	"github.com/PawelZabc/ProjektZespolowy/assets"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	"github.com/chewxy/math32"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func LoadRooms() []Room {
-	rooms := make([]Room, 0, 10)
+func LoadRooms() []ClientRoom {
+	rooms := make([]ClientRoom, 0, 10)
 	roomShared := Room1
-	objects := make([]*Object, 0, len(roomShared.Objects))
+	objects := make([]*entities.Object, 0, len(roomShared.Objects))
 	for _, object := range roomShared.Objects {
 		objects = append(objects, ConvertObjectSharedToClient(object))
 	}
-	room := Room{
+	room := ClientRoom{
 		Objects: objects,
 	}
 
@@ -24,14 +27,7 @@ func LoadRooms() []Room {
 	return rooms
 }
 
-type Object struct {
-	Colliders []colliders.Collider
-	DrawPoint rl.Vector3
-	Model     rl.Model
-	Color     rl.Color
-}
-
-func ConvertObjectSharedToClient(object *ObjectTWO) *Object {
+func ConvertObjectSharedToClient(object *ObjectTWO) *entities.Object {
 	model := rl.Model{}
 	drawPoint := object.DrawPoint
 	if object.Model != "" {
@@ -42,7 +38,7 @@ func ConvertObjectSharedToClient(object *ObjectTWO) *Object {
 		drawPoint = object.Colliders[0].GetPosition()
 	}
 
-	objectClient := Object{
+	objectClient := entities.Object{
 		Colliders: object.Colliders,
 		Model:     model,
 		// DrawPoint: object.DrawPoint,
@@ -78,7 +74,7 @@ func GetColorFromCollider(collider colliders.Collider) rl.Color {
 	return rl.White //if its not a plane color white
 }
 
-func DrawRoom(room *Room) {
+func DrawRoom(room *ClientRoom) {
 	DrawObjects(room.Objects)
 	DrawObjects(room.SharedObjects)
 	for _, room2 := range room.VisibleRooms {
@@ -86,14 +82,10 @@ func DrawRoom(room *Room) {
 	}
 }
 
-func DrawObjects(objects []*Object) {
+func DrawObjects(objects []*entities.Object) {
 	for _, object := range objects {
 		object.Draw()
 	}
-}
-
-func (o Object) Draw() {
-	rl.DrawModel(o.Model, o.DrawPoint, 1, o.Color)
 }
 
 func NewModelFromCollider(collider colliders.Collider) rl.Model {

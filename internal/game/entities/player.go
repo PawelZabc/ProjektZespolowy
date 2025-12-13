@@ -5,6 +5,7 @@ import (
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
+	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -18,6 +19,7 @@ type Player struct {
 	Movement    rl.Vector2
 	Speed       float32
 	LastMessage int64
+	Id          uint16
 }
 
 func (p *Player) Move() {
@@ -34,4 +36,16 @@ func (p *Player) GetPosition() rl.Vector3 {
 
 func (p *Player) AddPosition(vec rl.Vector3) {
 	p.Collider.AddPosition(vec)
+}
+
+func (p *Player) PushbackFrom(collider colliders.Collider) {
+	if collider != nil {
+		direction := p.Collider.PushbackFrom(collider)
+		if direction == shared.DirYminus {
+			p.IsOnFloor = true
+			p.Velocity.Y = 0
+		} else if direction == shared.DirY {
+			p.Velocity.Y = 0
+		}
+	}
 }
