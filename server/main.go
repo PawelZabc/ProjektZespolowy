@@ -52,11 +52,13 @@ func main() {
 
 			if _, ok := clients[clientAddr.String()]; !ok { //check if the address is new
 				clients[clientAddr.String()] = &s_entities.Player{ //add new client to player map
-					Velocity: rl.Vector3{},
-					Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5 /*add to opts*/, 1 /*add to opts*/), //add to opts
-					Speed:    0.1,                                                                                            //add to opts
-					Address:  clientAddr,
-					Id:       newPlayerId,
+					Velocity:    rl.Vector3{},
+					Collider:    s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5 /*add to opts*/, 1 /*add to opts*/), //add to opts
+					Speed:       0.1,                                                                                            //add to opts
+					Address:     clientAddr,
+					Id:          newPlayerId,
+					LastMessage: numberOFUpdates,
+					Hp:          100,
 				}
 				newPlayerId++
 				fmt.Println("New client:", clientAddr)
