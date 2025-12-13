@@ -4,3 +4,4 @@ bin/
 env*
 !env.example
 
+.golangci.yml
