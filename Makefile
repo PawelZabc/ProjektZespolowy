@@ -1,6 +1,6 @@
 APP_NAME := ray-game
-CLIENT_PATH := ./client
-SERVER_PATH := ./server
+CLIENT_PATH := ./cmd/client
+SERVER_PATH := ./cmd/server
 BUILD_DIR := ./bin
 GO := go
 ARCH := amd64
@@ -36,13 +36,13 @@ s: run-server
 client: run-client
 server: run-server
 
-run-client: run-generate
+run-client:
 	@echo "Running $(APP_NAME)/client on $(DETECTED_OS)"
-	cd $(CLIENT_PATH) && $(GO) run -tags $(TAGS) .
+	$(GO) run -tags $(TAGS) cmd/client/main.go
 
 run-server:
 	@echo "Running server on $(DETECTED_OS)"
-	cd $(SERVER_PATH) && $(GO) run .
+	$(GO) run cmd/server/main.go
 
 create-server:
 	@echo "Running server on $(DETECTED_OS)"
