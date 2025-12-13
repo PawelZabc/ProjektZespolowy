@@ -9,8 +9,9 @@ import (
 
 type Actor struct {
 	game.Object
-	Rotation float32
-	// Animation
+	Rotation       float32
+	Animation      uint8
+	AnimationFrame uint8
 }
 
 func (a *Actor) SetPosition(pos rl.Vector3) {
@@ -29,7 +30,29 @@ func DrawActorsMap[T comparable](actors map[T]*Actor) {
 	}
 }
 
+func (a *Actor) SetAnimation(anim uint8) {
+	if anim == a.Animation {
+		a.AnimationFrame++
+	} else {
+		a.Animation = anim
+		a.AnimationFrame = 0
+	}
+}
+
+func (a *Actor) UpdateAnimation() { //change this when the actual animation gets added
+	if a.Animation == uint8(types.Attacking) {
+		notRed := 255 - (8 * a.AnimationFrame)
+		if a.AnimationFrame > 50 {
+			notRed = 0
+		}
+		a.Color = rl.NewColor(255, notRed, notRed, 255)
+	} else {
+		a.Color = rl.White
+	}
+}
+
 func (a *Actor) Draw() {
+	a.UpdateAnimation()
 	rl.DrawModelEx(a.Object.Model, rl.Vector3Add(a.Object.DrawPoint, a.Colliders[0].GetPosition()), rl.NewVector3(0, 1, 0), a.Rotation, rl.Vector3One(), a.Object.Color)
 }
 
