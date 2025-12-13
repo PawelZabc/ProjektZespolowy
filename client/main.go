@@ -58,8 +58,22 @@ func main() {
 		Projection: rl.CameraPerspective,
 	}
 
-	player := entities.CreateCylinderObject(rl.NewVector3(0, 0, 0), 0.5, 1) //create player
-	players := make(map[uint16]*entities.Object)
+	playerCollider := s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1)
+	player := game.Object{Colliders: []types.Collider{playerCollider},
+		Model: game.NewModelFromCollider(playerCollider),
+	} //create player
+
+	players := make(map[uint16]*entities.Actor)
+	createPlayer := func(Id uint16, Position rl.Vector3, Rotation float32) {
+		cylinder := s_entities.NewCylinderCollider(Position, 0.5, 1) //if it doesnt create it
+		players[Id] = entities.NewActor(cylinder, rl.Vector3{}, (Rotation*rl.Rad2deg)+90, assets.ModelPlayer)
+
+	}
+	cylinder := s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1)     //if it doesnt create it
+	testPlayer := entities.NewActor(cylinder, rl.Vector3{}, 0, assets.ModelPlayer) //load player model
+	fmt.Println(testPlayer)
+
+	enemy := entities.NewActor(s_entities.NewCylinderCollider(rl.NewVector3(15, 0, 15), 1, 2), rl.Vector3{}, -45, assets.ModelGhost)
 
 	go func() { //go routine for receving messages
 		buffer := make([]byte, 1024)
@@ -73,10 +87,10 @@ func main() {
 			updatedPlayers := make(map[uint16]bool)                                   //create a map to check which players were sent
 			for _, player2 := range data.Players {                                    //update players slice with received players
 				if player2Object, ok := players[player2.Id]; ok { //check if player with that id existed before
-					player2Object.Collider.SetPosition(player2.Position) //if exists update position
+					player2Object.Object.Colliders[0].SetPosition(player2.Position) //if exists update position
+					player2Object.Rotation = (player2.Rotation * rl.Rad2deg)
 				} else {
-					cylinder := entities.CreateCylinderObject(player2.Position, 0.5, 1) //if it doesnt create it
-					players[player2.Id] = &cylinder
+					createPlayer(player2.Id, player2.Position, player2.Rotation)
 				}
 				updatedPlayers[player2.Id] = true //check player as updated
 
@@ -86,7 +100,9 @@ func main() {
 					delete(players, id)
 				}
 			}
-			player.Collider.SetPosition(data.Position)
+			player.Colliders[0].SetPosition(data.Position)
+			enemy.SetPosition(data.Enemy.Position)
+			enemy.Rotation = -data.Enemy.Rotation
 		}
 	}()
 
@@ -102,7 +118,16 @@ func main() {
 	ambient := []float32{0.1, 0.1, 0.1, 1.0}
 	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
 
-	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
+
+	pointObject := game.Object{Model: game.NewModelFromCollider(s_entities.NewCubeCollider(rl.Vector3{}, 0.1, 0.1, 0.1)),
+		Color: rl.Black,
+	}
+	side1Object := game.Object{Model: game.NewModelFromCollider(s_entities.NewCylinderCollider(rl.Vector3{}, 0.1, 0.2)),
+		Color: rl.Black,
+	}
+	side2Object := game.Object{Model: game.NewModelFromCollider(s_entities.NewCylinderCollider(rl.Vector3{}, 0.1, 0.2)),
+		Color: rl.Black,
+	}
 	//end of create objects
 
 	conn.Write([]byte("hello")) //send hello to server to register address
@@ -112,6 +137,7 @@ func main() {
 	cameraRotationx := float32(-math.Pi / 2)
 	cameraRotationy := float32(-math.Pi / 2) //setup camera rotation to look fowrward
 	rl.SetMousePosition(centerx, centery)    //reset mouse to the middle of the screen
+
 	rooms := game.LoadRooms(shader)
 	fmt.Println(rooms)
 	currentRoom := 0
@@ -147,18 +173,24 @@ func main() {
 	light3.Enabled = 1 // ON is default
 	light3.UpdateValues()
 
+
+	lockMouse := false
+	justClicked := false
+
 	udpSend := udp_data.ClientData{}
 	for !rl.WindowShouldClose() {
-		deltaMouse := rl.GetMousePosition() //check how much mouse has moved
+		if lockMouse {
+			deltaMouse := rl.GetMousePosition() //check how much mouse has moved
 
-		cameraRotationx += (deltaMouse.X - float32(centerx)) / 100 * config.CameraSensivity
-		cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100 * config.CameraSensivity //change camera rotation based on mouse movement
-		if cameraRotationy > config.CameraLockMax {
-			cameraRotationy = config.CameraLockMax
-		} else if cameraRotationy < config.CameraLockMin {
-			cameraRotationy = config.CameraLockMin
+			cameraRotationx += (deltaMouse.X - float32(centerx)) / 100 * config.CameraSensivity
+			cameraRotationy -= (deltaMouse.Y - float32(centery)) / 100 * config.CameraSensivity //change camera rotation based on mouse movement
+			if cameraRotationy > config.CameraLockMax {
+				cameraRotationy = config.CameraLockMax
+			} else if cameraRotationy < config.CameraLockMin {
+				cameraRotationy = config.CameraLockMin
+			}
+			rl.SetMousePosition(centerx, centery)
 		}
-		rl.SetMousePosition(centerx, centery)
 		udpSend = udp_data.ClientData{ //create object to send
 			RotationX: cameraRotationx,
 			RotationY: cameraRotationy,
@@ -176,6 +208,21 @@ func main() {
 		if rl.IsKeyDown(rl.KeyD /*add to opts*/) {
 			udpSend.Inputs = append(udpSend.Inputs, types.MoveRight)
 		}
+		if rl.IsKeyDown(rl.KeyR /*add to opts*/) && !justClicked {
+			lockMouse = !lockMouse
+			justClicked = true
+			if lockMouse {
+				rl.SetMousePosition(centerx, centery)
+				rl.HideCursor()
+
+			} else {
+				rl.ShowCursor()
+
+			}
+		}
+		if rl.IsKeyReleased(rl.KeyR) {
+			justClicked = false
+		}
 
 		if rl.IsKeyDown(rl.KeySpace /*add to opts*/) {
 			udpSend.Inputs = append(udpSend.Inputs, types.Jump)
@@ -186,8 +233,8 @@ func main() {
 			Y: float32(math.Cos(cameraRotationy))}
 		target = rl.Vector3Normalize(target) //create a normal vector based on rotation
 
-		camera.Position = rl.Vector3Add(player.Collider.GetPosition(), rl.NewVector3(0, 0.5 /*ad to opts*/, 0)) //set camera to player position with height offset
-		playerRay := s_entities.Ray{Origin: camera.Position, Direction: target}                                 //change player ray to have the same looking direction as the camera
+		camera.Position = rl.Vector3Add(player.Colliders[0].GetPosition(), rl.NewVector3(0, 0.5 /*ad to opts*/, 0)) //set camera to player position with height offset
+		playerRay := s_entities.Ray{Origin: camera.Position, Direction: target}                                     //change player ray to have the same looking direction as the camera
 		target = rl.Vector3Add(target, camera.Position)
 		camera.Target = target //set camera target
 
@@ -230,19 +277,28 @@ func main() {
 		rl.DrawSphereEx(light1.Position, 0.2, 8, 8, rl.White)
 		rl.DrawSphereEx(light2.Position, 0.2, 8, 8, rl.White)
 		rl.DrawSphereEx(light3.Position, 0.2, 8, 8, rl.White)
+		if cylinder, ok := rooms[currentRoom].Objects[1].Colliders[0].(*s_entities.CylinderCollider); ok {
+			pos1, pos2 := cylinder.GetSides(s_entities.GetVector2XZ(player.Colliders[0].GetPosition()))
+			drawPoint1 := rl.Vector3Add(s_entities.GetVector3FromXZ(pos1), cylinder.Position)
+			drawPoint1.Y += 0.5
+			drawPoint2 := rl.Vector3Add(s_entities.GetVector3FromXZ(pos2), cylinder.Position)
+			drawPoint2.Y += 0.5
+			side1Object.DrawPoint = drawPoint1
+			side1Object.Draw()
+			side2Object.DrawPoint = drawPoint2
+			side2Object.Draw()
+		}
 
 		if pointPosition != nil {
-			rl.DrawModel(pointObject.Model, rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05)), 1.0, rl.Black)
+			pointObject.DrawPoint = rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05))
+			pointObject.Draw()
 		} //draw the intersection point of player ray
 
-		for _, obj := range players { //draw players
-			if obj != nil {
-				obj.Model.Materials.Shader = shader
-				rl.DrawModel(obj.Model, obj.Collider.GetPosition(), 1.0, rl.White)
-			}
-		}
-		game.DrawRoom(&rooms[currentRoom]) //draw the room the player is currently in
 
+		entities.DrawActorsMap(players)    //draw players
+
+		game.DrawRoom(&rooms[currentRoom]) //draw the room the player is currently in
+		enemy.Draw()
 		rl.EndMode3D()
 		rl.DrawText("Collision demo", 10, 10, 20, rl.Black)
 		rl.EndDrawing()

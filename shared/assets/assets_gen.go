@@ -23,7 +23,5 @@ const (
 const (
 	ShaderLightingFS = "lighting.fs"
 	ShaderLightingVS = "lighting.vs"
-	ShaderLightingV2FS = "lighting_v2.fs"
-	ShaderLightingV2VS = "lighting_v2.vs"
 )
 
