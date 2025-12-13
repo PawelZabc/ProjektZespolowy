@@ -73,7 +73,7 @@ func main() {
 	testPlayer := entities.NewActor(cylinder, rl.Vector3{}, 0, assets.ModelPlayer) //load player model
 	fmt.Println(testPlayer)
 
-	enemy := entities.NewActor(s_entities.NewCylinderCollider(rl.NewVector3(2, 0, 2), 1, 2), rl.Vector3{}, -45, assets.ModelGhost)
+	enemy := entities.NewActor(s_entities.NewCylinderCollider(rl.NewVector3(15, 0, 15), 1, 2), rl.Vector3{}, -45, assets.ModelGhost)
 
 	go func() { //go routine for receving messages
 		buffer := make([]byte, 1024)
@@ -88,7 +88,7 @@ func main() {
 			for _, player2 := range data.Players {                                    //update players slice with received players
 				if player2Object, ok := players[player2.Id]; ok { //check if player with that id existed before
 					player2Object.Object.Colliders[0].SetPosition(player2.Position) //if exists update position
-					player2Object.Rotation = (player2.Rotation * rl.Rad2deg) + 90
+					player2Object.Rotation = (player2.Rotation * rl.Rad2deg)
 				} else {
 					createPlayer(player2.Id, player2.Position, player2.Rotation)
 				}
@@ -102,7 +102,7 @@ func main() {
 			}
 			player.Colliders[0].SetPosition(data.Position)
 			enemy.SetPosition(data.Enemy.Position)
-			enemy.Rotation = data.Enemy.Rotation
+			enemy.Rotation = -data.Enemy.Rotation
 		}
 	}()
 
@@ -110,6 +110,12 @@ func main() {
 	//create objects
 
 	pointObject := game.Object{Model: game.NewModelFromCollider(s_entities.NewCubeCollider(rl.Vector3{}, 0.1, 0.1, 0.1)),
+		Color: rl.Black,
+	}
+	side1Object := game.Object{Model: game.NewModelFromCollider(s_entities.NewCylinderCollider(rl.Vector3{}, 0.1, 0.2)),
+		Color: rl.Black,
+	}
+	side2Object := game.Object{Model: game.NewModelFromCollider(s_entities.NewCylinderCollider(rl.Vector3{}, 0.1, 0.2)),
 		Color: rl.Black,
 	}
 	//end of create objects
@@ -122,7 +128,7 @@ func main() {
 	cameraRotationy := float32(-math.Pi / 2) //setup camera rotation to look fowrward
 	rl.SetMousePosition(centerx, centery)    //reset mouse to the middle of the screen
 	rooms := game.LoadRooms()
-	fmt.Println(rooms)
+
 	currentRoom := 0
 	lockMouse := false
 	justClicked := false
@@ -215,6 +221,18 @@ func main() {
 		rl.ClearBackground(rl.RayWhite)
 
 		rl.BeginMode3D(camera)
+
+		if cylinder, ok := rooms[currentRoom].Objects[1].Colliders[0].(*s_entities.CylinderCollider); ok {
+			pos1, pos2 := cylinder.GetSides(s_entities.GetVector2XZ(player.Colliders[0].GetPosition()))
+			drawPoint1 := rl.Vector3Add(s_entities.GetVector3FromXZ(pos1), cylinder.Position)
+			drawPoint1.Y += 0.5
+			drawPoint2 := rl.Vector3Add(s_entities.GetVector3FromXZ(pos2), cylinder.Position)
+			drawPoint2.Y += 0.5
+			side1Object.DrawPoint = drawPoint1
+			side1Object.Draw()
+			side2Object.DrawPoint = drawPoint2
+			side2Object.Draw()
+		}
 
 		if pointPosition != nil {
 			pointObject.DrawPoint = rl.Vector3Add(*pointPosition, rl.NewVector3(-0.05, -0.05, -0.05))
