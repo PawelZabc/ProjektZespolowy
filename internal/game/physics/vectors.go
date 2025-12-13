@@ -1,4 +1,4 @@
-package entities
+package physics
 
 import rl "github.com/gen2brain/raylib-go/raylib"
 

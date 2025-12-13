@@ -1,14 +1,14 @@
-package network
+package protocol
 
 import (
 	"bytes"
 	"encoding/binary"
 
-	types "github.com/PawelZabc/ProjektZespolowy/internal/types"
+	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 )
 
 type ClientData struct {
-	Inputs    []types.PlayerAction
+	Inputs    []shared.PlayerAction
 	RotationX float32
 	RotationY float32
 }
@@ -35,7 +35,7 @@ func DeserializeClientData(buf []byte) ClientData {
 	binary.Read(b, binary.LittleEndian, &size)
 	binary.Read(b, binary.LittleEndian, &c.RotationX)
 	binary.Read(b, binary.LittleEndian, &c.RotationY)
-	c.Inputs = make([]types.PlayerAction, size)
+	c.Inputs = make([]shared.PlayerAction, size)
 	for i := range size {
 		binary.Read(b, binary.LittleEndian, &c.Inputs[i])
 	}

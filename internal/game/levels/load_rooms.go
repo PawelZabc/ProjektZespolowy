@@ -1,16 +1,16 @@
-package game
+package levels
 
 import (
-	"github.com/PawelZabc/ProjektZespolowy/client/assets"
-	s_types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
-	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
-	leveldata "github.com/PawelZabc/ProjektZespolowy/shared/level_data"
+	"github.com/PawelZabc/ProjektZespolowy/assets"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
+	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
+	"github.com/chewxy/math32"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func LoadRooms() []Room {
 	rooms := make([]Room, 0, 10)
-	roomShared := leveldata.Room1
+	roomShared := Room1
 	objects := make([]*Object, 0, len(roomShared.Objects))
 	for _, object := range roomShared.Objects {
 		objects = append(objects, ConvertObjectSharedToClient(object))
@@ -24,20 +24,14 @@ func LoadRooms() []Room {
 	return rooms
 }
 
-type Room struct {
-	Objects       []*Object //objects and walls in that room
-	SharedObjects []*Object //objects shared with visible rooms
-	VisibleRooms  []*Room   //rooms visible that need to be rendered while in the room
-}
-
 type Object struct {
-	Colliders []s_types.Collider
+	Colliders []colliders.Collider
 	DrawPoint rl.Vector3
 	Model     rl.Model
 	Color     rl.Color
 }
 
-func ConvertObjectSharedToClient(object *leveldata.Object) *Object {
+func ConvertObjectSharedToClient(object *ObjectTWO) *Object {
 	model := rl.Model{}
 	drawPoint := object.DrawPoint
 	if object.Model != "" {
@@ -60,8 +54,8 @@ func ConvertObjectSharedToClient(object *leveldata.Object) *Object {
 
 }
 
-func GetColorFromCollider(collider s_types.Collider) rl.Color {
-	// if plane, ok := collider.(*s_entities.PlaneCollider); ok { //check if the collider is a plane
+func GetColorFromCollider(collider colliders.Collider) rl.Color {
+	// if plane, ok := collider.(*colider.PlaneCollider); ok { //check if the collider is a plane
 	// 	switch plane.Direction { //check which color to draw the plane as
 	// 	case types.DirX:
 	// 		{
@@ -102,14 +96,14 @@ func (o Object) Draw() {
 	rl.DrawModel(o.Model, o.DrawPoint, 1, o.Color)
 }
 
-func NewModelFromCollider(collider s_types.Collider) rl.Model {
+func NewModelFromCollider(collider colliders.Collider) rl.Model {
 
 	switch c := collider.(type) {
-	case *s_entities.CubeCollider:
+	case *colliders.CubeCollider:
 		return NewModelFromCubeCollider(c)
-	case *s_entities.CylinderCollider:
+	case *colliders.CylinderCollider:
 		return NewModelFromCylinderCollider(c)
-	case *s_entities.PlaneCollider:
+	case *colliders.PlaneCollider:
 		return NewModelFromPlaneCollider(c)
 	default:
 		return rl.Model{}
@@ -117,7 +111,7 @@ func NewModelFromCollider(collider s_types.Collider) rl.Model {
 
 }
 
-func NewModelFromCubeCollider(collider *s_entities.CubeCollider) rl.Model {
+func NewModelFromCubeCollider(collider *colliders.CubeCollider) rl.Model {
 	modelData, _ := assets.GlobalManager.LoadModel(assets.ModelCube)
 	model := modelData.Data
 	model.Transform = rl.MatrixScale(collider.SizeX, collider.SizeY, collider.SizeZ)
@@ -125,7 +119,7 @@ func NewModelFromCubeCollider(collider *s_entities.CubeCollider) rl.Model {
 	return model
 }
 
-func NewModelFromCylinderCollider(collider *s_entities.CylinderCollider) rl.Model {
+func NewModelFromCylinderCollider(collider *colliders.CylinderCollider) rl.Model {
 	modelData, _ := assets.GlobalManager.LoadModel(assets.ModelCylinder)
 	model := modelData.Data
 	model.Transform = rl.MatrixScale(collider.Radius, collider.Height, collider.Radius)
@@ -133,23 +127,67 @@ func NewModelFromCylinderCollider(collider *s_entities.CylinderCollider) rl.Mode
 	return model
 }
 
-func NewModelFromPlaneCollider(collider *s_entities.PlaneCollider) rl.Model {
+func NewModelFromPlaneCollider(collider *colliders.PlaneCollider) rl.Model {
 	modelData, _ := assets.GlobalManager.LoadModel(assets.ModelCube)
 	model := modelData.Data
 	switch collider.Direction {
-	case s_types.DirX, s_types.DirXminus:
+	case shared.DirX, shared.DirXminus:
 		{
 			model.Transform = rl.MatrixScale(0.01, collider.Height, collider.Width)
 		}
-	case s_types.DirY, s_types.DirYminus:
+	case shared.DirY, shared.DirYminus:
 		{
 			model.Transform = rl.MatrixScale(collider.Width, 0.01, collider.Height)
 		}
-	case s_types.DirZ, s_types.DirZminus:
+	case shared.DirZ, shared.DirZminus:
 		{
 			model.Transform = rl.MatrixScale(collider.Width, collider.Height, 0.01)
 		}
 	}
 
 	return model
+}
+
+func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height float32) []colliders.Collider {
+
+	count := 0
+	for _, change := range Changes {
+		if !change.Skip {
+			count++
+		}
+	}
+	walls := make([]colliders.Collider, len(Changes))
+	skipped := 0
+	for i, change := range Changes {
+		if change.Axis == shared.DirX {
+			change.Axis = shared.DirZ
+		} else {
+			change.Axis = shared.DirX
+		}
+
+		var object colliders.PlaneCollider
+		if change.Value < 0 {
+			if change.Axis == shared.DirX {
+				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(0, 0, change.Value))
+			} else {
+				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(change.Value, 0, 0))
+			}
+		}
+		if !change.Skip {
+			object = *colliders.NewPlaneCollider(StartPoint, math32.Abs(change.Value), Height, change.Axis)
+			walls[i-skipped] = &object
+		} else {
+			skipped += 1
+		}
+		if change.Value > 0 {
+			if change.Axis == shared.DirX {
+				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(0, 0, change.Value))
+			} else {
+				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(change.Value, 0, 0))
+			}
+		}
+
+	}
+
+	return walls
 }

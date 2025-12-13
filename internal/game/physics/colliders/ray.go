@@ -1,7 +1,8 @@
-package entities
+package colliders
 
 import (
-	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
+	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	math "github.com/chewxy/math32"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -11,7 +12,7 @@ type Ray struct {
 	Direction rl.Vector3
 }
 
-func (r *Ray) GetCollisionPoint(collider types.Collider) (*rl.Vector3, float32) {
+func (r *Ray) GetCollisionPoint(collider Collider) (*rl.Vector3, float32) {
 	if plane, ok := collider.(*PlaneCollider); ok {
 		return r.GetCollisionPointWithPlane(*plane)
 	} else if cube, ok := collider.(*CubeCollider); ok {
@@ -98,24 +99,6 @@ func (r *Ray) GetCollisionPointWithCube(cube CubeCollider) (*rl.Vector3, float32
 }
 
 func (r *Ray) GetCollisionPointWithCylinder(cylinder CylinderCollider) (*rl.Vector3, float32) {
-	rayStart := GetVector2XZ(r.Origin) //source for math: https://youtu.be/ebzlMOw79Yw?si=I1rRq7fPx9mPEyjk
-	circleCenter := GetVector2XZ(cylinder.Position)
-	s := rl.Vector2Subtract(rayStart, circleCenter)
-	a := rl.Vector2DotProduct(GetVector2XZ(r.Direction), GetVector2XZ(r.Direction))
-	b := rl.Vector2DotProduct(s, GetVector2XZ(r.Direction))
-	c := rl.Vector2DotProduct(s, s) - (cylinder.Radius * cylinder.Radius)
-	h := b*b - (a * c)
-	if h >= 0 {
-		h = math.Sqrt(h)
-		t := (-b - h) / a
-		if t >= 0 {
-			point := rl.Vector3Scale(r.Direction, t)
-			point = rl.Vector3Add(point, r.Origin)
-			if point.Y >= cylinder.Position.Y && point.Y <= (cylinder.Position.Y+cylinder.Height) {
-				return &point, t
-			}
-		}
-	}
 	distanceY := cylinder.GetPosition().Y - r.Origin.Y
 	distanceY2 := cylinder.GetPosition().Y + cylinder.Height - r.Origin.Y
 	if math.Abs(distanceY) > math.Abs(distanceY2) {
@@ -126,17 +109,36 @@ func (r *Ray) GetCollisionPointWithCylinder(cylinder CylinderCollider) (*rl.Vect
 		point := rl.Vector3Scale(r.Direction, stepsY)
 		length := rl.Vector3Length(point)
 		point = rl.Vector3Add(point, r.Origin)
-		if rl.Vector2Length(rl.Vector2Subtract(GetVector2XZ(point), GetVector2XZ(cylinder.Position))) <= cylinder.Radius {
+		if rl.Vector2Length(rl.Vector2Subtract(physics.GetVector2XZ(point), physics.GetVector2XZ(cylinder.Position))) <= cylinder.Radius {
 			return &point, length
 		}
 	}
-
+	rayStart := physics.GetVector2XZ(r.Origin) //source for math: https://youtu.be/ebzlMOw79Yw?si=I1rRq7fPx9mPEyjk
+	circleCenter := physics.GetVector2XZ(cylinder.Position)
+	s := rl.Vector2Subtract(rayStart, circleCenter)
+	a := rl.Vector2DotProduct(physics.GetVector2XZ(r.Direction), physics.GetVector2XZ(r.Direction))
+	b := rl.Vector2DotProduct(s, physics.GetVector2XZ(r.Direction))
+	c := rl.Vector2DotProduct(s, s) - (cylinder.Radius * cylinder.Radius)
+	h := b*b - (a * c)
+	if h < 0 {
+		return nil, 0
+	}
+	h = math.Sqrt(h)
+	t := (-b - h) / a
+	if t < 0 {
+		return nil, 0
+	}
+	point := rl.Vector3Scale(r.Direction, t)
+	point = rl.Vector3Add(point, r.Origin)
+	if point.Y >= cylinder.Position.Y && point.Y <= (cylinder.Position.Y+cylinder.Height) {
+		return &point, t
+	}
 	return nil, 0
 }
 
 func (r *Ray) GetCollisionPointWithPlane(plane PlaneCollider) (*rl.Vector3, float32) {
 	switch plane.Direction {
-	case types.DirZ:
+	case shared.DirZ:
 		{
 			if r.Direction.Z == 0 {
 				return nil, 0
@@ -155,7 +157,7 @@ func (r *Ray) GetCollisionPointWithPlane(plane PlaneCollider) (*rl.Vector3, floa
 				}
 			}
 		}
-	case types.DirX:
+	case shared.DirX:
 		{
 			if r.Direction.X == 0 {
 				return nil, 0
@@ -174,7 +176,7 @@ func (r *Ray) GetCollisionPointWithPlane(plane PlaneCollider) (*rl.Vector3, floa
 				}
 			}
 		}
-	case types.DirY, types.DirYminus:
+	case shared.DirY, shared.DirYminus:
 		{
 			if r.Direction.Y == 0 {
 				return nil, 0

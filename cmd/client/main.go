@@ -1,4 +1,4 @@
-package client
+package main
 
 import (
 	"flag"
@@ -6,13 +6,13 @@ import (
 	"net"
 	"time"
 
-	"github.com/PawelZabc/ProjektZespolowy/client/assets"
-	"github.com/PawelZabc/ProjektZespolowy/client/config"
-	entities "github.com/PawelZabc/ProjektZespolowy/client/entities"
-	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
-	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
-	leveldata "github.com/PawelZabc/ProjektZespolowy/shared/level_data"
-	udp_data "github.com/PawelZabc/ProjektZespolowy/shared/udp_data"
+	"github.com/PawelZabc/ProjektZespolowy/assets"
+	"github.com/PawelZabc/ProjektZespolowy/internal/config"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
+	"github.com/PawelZabc/ProjektZespolowy/internal/protocol"
+	types "github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -70,7 +70,7 @@ func main() {
 				continue
 			}
 			players = make([]*entities.Object, 0, 12)                                 //empty the player slice
-			var data udp_data.ServerData = udp_data.DeserializeServerData(buffer[:n]) //deserialize data
+			var data protocol.ServerData = protocol.DeserializeServerData(buffer[:n]) //deserialize data
 			for _, player2 := range data.Players {                                    //fill players slice with received players
 				playerObject := entities.CreateCylinderObject(player2.Position, 0.5, 1)
 				players = append(players, &playerObject)
@@ -90,7 +90,7 @@ func main() {
 	ceiling := entities.CreatePlaneObject(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
 	objects = append(objects, &ceiling)
 
-	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), leveldata.Changes, 3)...)
+	objects = append(objects, entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), levels.BasicLevel, 3)...)
 	pointObject := entities.CreateCubeObject(rl.Vector3{}, 0.1, 0.1, 0.1)
 	//end of create objects
 
@@ -102,7 +102,7 @@ func main() {
 	cameraRotationy := float32(-math.Pi / 2) //setup camera rotation to look fowrward
 	rl.SetMousePosition(centerx, centery)    //reset mouse to the middle of the screen
 
-	udpSend := udp_data.ClientData{}
+	udpSend := protocol.ClientData{}
 	for !rl.WindowShouldClose() {
 		deltaMouse := rl.GetMousePosition() //check how much mouse has moved
 
@@ -114,7 +114,7 @@ func main() {
 			cameraRotationy = config.CameraLockMin
 		}
 		rl.SetMousePosition(centerx, centery)
-		udpSend = udp_data.ClientData{ //create object to send
+		udpSend = protocol.ClientData{ //create object to send
 			RotationX: cameraRotationx,
 			RotationY: cameraRotationy,
 			Inputs:    make([]types.PlayerAction, 0, 5),
@@ -142,11 +142,11 @@ func main() {
 		target = rl.Vector3Normalize(target) //create a normal vector based on rotation
 
 		camera.Position = rl.Vector3Add(player.Collider.GetPosition(), rl.NewVector3(0, 0.5 /*ad to opts*/, 0)) //set camera to player position with height offset
-		playerRay := s_entities.Ray{Origin: camera.Position, Direction: target}                                 //change player ray to have the same looking direction as the camera
+		playerRay := colliders.Ray{Origin: camera.Position, Direction: target}                                  //change player ray to have the same looking direction as the camera
 		target = rl.Vector3Add(target, camera.Position)
 		camera.Target = target //set camera target
 
-		data := udp_data.SerializeClientData(udpSend) // send input and player data to the server
+		data := protocol.SerializeClientData(udpSend) // send input and player data to the server
 		_, err := conn.Write(data)
 		if err != nil {
 			fmt.Println("Write error:", err)
@@ -177,7 +177,7 @@ func main() {
 
 		for _, obj := range objects { //draw every object
 			if obj != nil {
-				if plane, ok := obj.Collider.(*s_entities.PlaneCollider); ok {
+				if plane, ok := obj.Collider.(*colliders.PlaneCollider); ok {
 					switch plane.Direction { //check which color to draw the plane as
 					case types.DirX:
 						{

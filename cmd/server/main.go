@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"fmt"
@@ -7,10 +7,11 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
-	types "github.com/PawelZabc/ProjektZespolowy/shared/_types"
-	s_entities "github.com/PawelZabc/ProjektZespolowy/shared/entities"
-	leveldata "github.com/PawelZabc/ProjektZespolowy/shared/level_data"
-	udp_data "github.com/PawelZabc/ProjektZespolowy/shared/udp_data"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
+	"github.com/PawelZabc/ProjektZespolowy/internal/protocol"
+	shared "github.com/PawelZabc/ProjektZespolowy/internal/shared"
 )
 
 func main() {
@@ -29,18 +30,18 @@ func main() {
 	fmt.Println("Server listening on port 9000...")
 	//end creating connection
 
-	clients := make(map[string]*s_entities.Player) //create player map
+	clients := make(map[string]*entities.Player) //create player map
 
 	//create objects
-	objects := make([]types.Collider, 0, 100)
-	floor := s_entities.NewPlaneCollider(rl.NewVector3(-25, 0, -25), 50, 50, types.DirY)
+	objects := make([]colliders.Collider, 0, 100)
+	floor := colliders.NewPlaneCollider(rl.NewVector3(-25, 0, -25), 50, 50, shared.DirY)
 	objects = append(objects, floor)
-	objects = append(objects, s_entities.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), leveldata.Changes, 3)...)
-	object := s_entities.NewCylinderCollider(rl.NewVector3(1, 1, 0), 0.5, 1)
+	objects = append(objects, levels.CreateRoomWallsFromChanges(rl.NewVector3(-10, 0, -10), levels.BasicLevel, 3)...)
+	object := colliders.NewCylinderCollider(rl.NewVector3(1, 1, 0), 0.5, 1)
 	objects = append(objects, object)
-	object2 := s_entities.NewCubeCollider(rl.NewVector3(-3, 0, 6), 6, 1, 2)
+	object2 := colliders.NewCubeCollider(rl.NewVector3(-3, 0, 6), 6, 1, 2)
 	objects = append(objects, object2)
-	ceiling := s_entities.NewPlaneCollider(rl.NewVector3(-25, 3, -25), 50, 50, types.DirYminus)
+	ceiling := colliders.NewPlaneCollider(rl.NewVector3(-25, 3, -25), 50, 50, shared.DirYminus)
 	objects = append(objects, ceiling)
 	//end of create objects
 	numberOFUpdates := int64(0)
@@ -55,10 +56,10 @@ func main() {
 			} //check if there is a new message, if not continue
 
 			if _, ok := clients[clientAddr.String()]; !ok { //check if the address is new
-				clients[clientAddr.String()] = &s_entities.Player{ //add new client to player map
+				clients[clientAddr.String()] = &entities.Player{ //add new client to player map
 					Velocity: rl.Vector3{},
-					Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5 /*add to opts*/, 1 /*add to opts*/), //add to opts
-					Speed:    0.1,                                                                                            //add to opts
+					Collider: colliders.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5 /*add to opts*/, 1 /*add to opts*/), //add to opts
+					Speed:    0.1,                                                                                           //add to opts
 					Address:  clientAddr,
 				}
 				fmt.Println("New client:", clientAddr)
@@ -66,20 +67,20 @@ func main() {
 				player := clients[clientAddr.String()]     //get current player from address
 				if player.LastMessage != numberOFUpdates { //check if there was already an update from the player
 					player.LastMessage = numberOFUpdates
-					var data udp_data.ClientData = udp_data.DeserializeClientData(buffer[:n]) // deserialize data
+					var data protocol.ClientData = protocol.DeserializeClientData(buffer[:n]) // deserialize data
 					player.RotationX = data.RotationX
 					player.RotationY = data.RotationY
 					for _, input := range data.Inputs { //decide what to do with the inputs
 						switch input {
-						case types.MoveForward:
+						case shared.MoveForward:
 							player.Movement.Y = 1
-						case types.MoveBackward:
+						case shared.MoveBackward:
 							player.Movement.Y = -1
-						case types.MoveLeft:
+						case shared.MoveLeft:
 							player.Movement.X = 1
-						case types.MoveRight:
+						case shared.MoveRight:
 							player.Movement.X = -1
-						case types.Jump:
+						case shared.Jump:
 							if player.IsOnFloor {
 								player.Velocity.Y = 0.1
 							}
@@ -106,10 +107,10 @@ func main() {
 			for _, obj := range objects { //collide with every object
 				if obj != nil {
 					direction := player.Collider.PushbackFrom(obj)
-					if direction == types.DirYminus {
+					if direction == shared.DirYminus {
 						player.IsOnFloor = true
 						player.Velocity.Y = 0
-					} else if direction == types.DirY {
+					} else if direction == shared.DirY {
 						player.Velocity.Y = 0
 					}
 				}
@@ -126,23 +127,23 @@ func main() {
 
 	}()
 
-	players := make([]udp_data.PlayerData, 0, 10 /*add to opts*/)
+	players := make([]protocol.PlayerData, 0, 10 /*add to opts*/)
 	ticker := time.NewTicker(time.Second / 30 /*add to opts*/)
 	for range ticker.C { //send data 30 times a second
 
 		for _, player := range clients {
-			players = make([]udp_data.PlayerData, 0, 10) //create a list with every player except itself
+			players = make([]protocol.PlayerData, 0, 10) //create a list with every player except itself
 			for _, player2 := range clients {
 				if player2.Address != player.Address {
-					players = append(players, udp_data.PlayerData{
+					players = append(players, protocol.PlayerData{
 						Position: player2.Collider.GetPosition(),
 					})
 				}
 			}
-			udpSend := udp_data.ServerData{}
+			udpSend := protocol.ServerData{}
 			udpSend.Position = player.GetPosition()
 			udpSend.Players = players
-			conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address) //send data
+			conn.WriteToUDP(protocol.SerializeServerData(udpSend), player.Address) //send data
 		}
 	}
 }

@@ -1,7 +1,7 @@
-package entities
+package colliders
 
 import (
-	types "github.com/PawelZabc/ProjektZespolowy/internal/shared/types"
+	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -13,7 +13,7 @@ type CylinderCollider struct {
 	Height   float32
 }
 
-func (c CylinderCollider) CollidesWith(c2 types.Collider) bool {
+func (c CylinderCollider) CollidesWith(c2 Collider) bool {
 	if cylinder, ok := c2.(*CylinderCollider); ok {
 		if rl.Vector2Distance(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
 			rl.Vector2{X: cylinder.Position.X, Y: cylinder.Position.Z}) < (c.Radius+cylinder.Radius) &&
@@ -45,7 +45,7 @@ func (c *CylinderCollider) AddPosition(vec rl.Vector3) {
 	c.Position = rl.Vector3Add(c.Position, vec)
 }
 
-func (c *CylinderCollider) PushbackFrom(c2 types.Collider) types.Direction {
+func (c *CylinderCollider) PushbackFrom(c2 Collider) shared.Direction {
 	if cylinder, ok := c2.(*CylinderCollider); ok {
 		return c.PushbackFromCylinder(cylinder)
 	} else if cube, ok := c2.(*CubeCollider); ok {
@@ -54,11 +54,11 @@ func (c *CylinderCollider) PushbackFrom(c2 types.Collider) types.Direction {
 		return c.PushbackFromPlane(plane)
 	}
 
-	return types.DirNone
+	return shared.DirNone
 
 }
 
-func (c *CylinderCollider) PushbackFromCube(cube *CubeCollider) types.Direction {
+func (c *CylinderCollider) PushbackFromCube(cube *CubeCollider) shared.Direction {
 	diffrence := rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
 		rl.Vector2{X: math.Min(cube.Position.X+cube.SizeX, math.Max(cube.Position.X, c.Position.X)),
 			Y: math.Min(cube.Position.Z+cube.SizeZ, math.Max(cube.Position.Z, c.Position.Z))})
@@ -70,28 +70,28 @@ func (c *CylinderCollider) PushbackFromCube(cube *CubeCollider) types.Direction 
 		if distanceXZ > distanceY1 && distanceXZ > distanceY2 {
 			forceXZ := rl.Vector2Scale(rl.Vector2Normalize(diffrence), -distanceXZ)
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(forceXZ.X, 0, forceXZ.Y))
-			return types.DirXZ
+			return shared.DirXZ
 
 		} else if distanceY1 > distanceY2 {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
-			return -types.DirY
+			return -shared.DirY
 		} else {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
-			return types.DirY
+			return shared.DirY
 		}
 	} else {
-		return types.DirNone
+		return shared.DirNone
 	}
 
 }
 
-func (c *CylinderCollider) PushbackFromPlane(plane *PlaneCollider) types.Direction {
+func (c *CylinderCollider) PushbackFromPlane(plane *PlaneCollider) shared.Direction {
 
 	switch plane.Direction {
-	case types.DirX, types.DirXminus, types.DirZ, types.DirZminus:
+	case shared.DirX, shared.DirXminus, shared.DirZ, shared.DirZminus:
 		{
 			var diffrence rl.Vector2
-			if plane.Direction == types.DirZ || plane.Direction == types.DirZminus {
+			if plane.Direction == shared.DirZ || plane.Direction == shared.DirZminus {
 				diffrence = rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
 					rl.Vector2{X: math.Min(plane.Position.X+plane.Width, math.Max(plane.Position.X, c.Position.X)),
 						Y: plane.Position.Z,
@@ -113,7 +113,7 @@ func (c *CylinderCollider) PushbackFromPlane(plane *PlaneCollider) types.Directi
 				return -plane.Direction
 			}
 		}
-	case types.DirY, types.DirYminus:
+	case shared.DirY, shared.DirYminus:
 		{
 			diffrence := rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
 				rl.Vector2{X: math.Min(plane.Position.X+plane.Width, math.Max(plane.Position.X, c.Position.X)),
@@ -122,26 +122,26 @@ func (c *CylinderCollider) PushbackFromPlane(plane *PlaneCollider) types.Directi
 			distanceY1 := c.Position.Y - plane.Position.Y
 			distanceY2 := plane.Position.Y - (c.Position.Y + c.Height)
 			if distanceXZ <= 0 && distanceY1 <= 0 && distanceY2 <= 0 {
-				if plane.Direction == -types.DirY {
+				if plane.Direction == -shared.DirY {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
-					return types.DirY
+					return shared.DirY
 				} else {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
-					return -types.DirY
+					return -shared.DirY
 				}
 			}
 
 		}
 		// default:
 		// 	{
-		// 		return types.DirNone
+		// 		return shared.DirNone
 		// 	}
 	}
-	return types.DirNone
+	return shared.DirNone
 
 }
 
-func (c *CylinderCollider) PushbackFromCylinder(cylinder *CylinderCollider) types.Direction {
+func (c *CylinderCollider) PushbackFromCylinder(cylinder *CylinderCollider) shared.Direction {
 	diffrence := rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
 		rl.Vector2{X: cylinder.Position.X, Y: cylinder.Position.Z})
 	distanceXZ := rl.Vector2Length(diffrence) - (c.Radius + cylinder.Radius)
@@ -152,18 +152,18 @@ func (c *CylinderCollider) PushbackFromCylinder(cylinder *CylinderCollider) type
 		if distanceXZ > distanceY1 && distanceXZ > distanceY2 {
 			forceXZ := rl.Vector2Scale(rl.Vector2Normalize(diffrence), -distanceXZ)
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(forceXZ.X, 0, forceXZ.Y))
-			return types.DirXZ
+			return shared.DirXZ
 
 		} else if distanceY1 > distanceY2 {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
-			return -types.DirY
+			return -shared.DirY
 		} else {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
-			return types.DirY
+			return shared.DirY
 		}
 
 	} else {
-		return types.DirNone
+		return shared.DirNone
 	}
 
 }

@@ -1,4 +1,4 @@
-package types
+package shared
 
 type Direction int8
 
