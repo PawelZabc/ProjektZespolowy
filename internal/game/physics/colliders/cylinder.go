@@ -13,7 +13,14 @@ type CylinderCollider struct {
 	Height   float32
 }
 
-func (c CylinderCollider) CollidesWith(c2 Collider) bool {
+func (c CylinderCollider) GetSides(position rl.Vector2) (rl.Vector2, rl.Vector2) {
+	cylinderPosition := GetVector2XZ(c.Position)
+	difference := rl.Vector2Subtract(cylinderPosition, position)
+	normalised := rl.Vector2Normalize(difference)
+	return rl.Vector2Scale(rl.NewVector2(-normalised.Y, normalised.X), c.Radius), rl.Vector2Scale(rl.NewVector2(normalised.Y, -normalised.X), c.Radius)
+}
+
+func (c CylinderCollider) CollidesWith(c2 types.Collider) bool {
 	if cylinder, ok := c2.(*CylinderCollider); ok {
 		if rl.Vector2Distance(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
 			rl.Vector2{X: cylinder.Position.X, Y: cylinder.Position.Z}) < (c.Radius+cylinder.Radius) &&
