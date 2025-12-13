@@ -108,7 +108,7 @@ func main() {
 			}
 			player.PushbackFrom(enemy.Collider)
 		}
-		enemy.UpdateTarget(players)
+		enemy.UpdateTarget(players, &objects)
 		enemy.Move()
 		for _, obj := range objects { //collide with every object
 			if obj != nil {
