@@ -1,6 +1,9 @@
 package client
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/PawelZabc/ProjektZespolowy/assets"
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
@@ -37,6 +40,11 @@ func NewGameState() *GameState {
 
 	rooms := levels.LoadRooms()
 
+	// loading player model into memory - TODO: FIX
+	// due to bug with loading model in another thread (OpenGL context is limited to one)
+	playerModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
+	fmt.Println("Player model loaded", playerModel)
+
 	return &GameState{
 		player:      player,
 		players:     make(map[uint16]*entities.Actor),
@@ -46,7 +54,13 @@ func NewGameState() *GameState {
 	}
 }
 
-// Gather data from server and apply it on the client
+// TODO: Implement that method if it would be usefull
+// Updates that happen only on client
+func (gs *GameState) UpdateFromClient() {
+	log.Fatal("UpdateFromClient not implemented")
+}
+
+// Gather data from server and apply it on the client (executes in goroutine)
 func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	gs.player.Colliders[0].SetPosition(data.Position)
 
@@ -96,7 +110,7 @@ func (gs *GameState) GetCurrentRoom() *levels.ClientRoom {
 	return &gs.rooms[gs.currentRoom]
 }
 
-// Getter for players
+// Getter for other players
 func (gs *GameState) GetPlayers() map[uint16]*entities.Actor {
 	return gs.players
 }

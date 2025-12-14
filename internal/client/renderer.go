@@ -82,15 +82,15 @@ func (r *Renderer) renderCylinderSides(object *entities.Object, playerPos rl.Vec
 
 // util functions to render cube at ray collition point
 func (r *Renderer) renderCollisionPoint(point rl.Vector3) {
-	createDebugCube(rl.Vector3Add(point, rl.NewVector3(-0.05, -0.05, -0.05))).Draw()
+	createDebugCube(rl.Vector3Add(point, rl.NewVector3(-0.05, -0.05, -0.05)), rl.Black).Draw()
 }
 
 // cube machine
-func createDebugCube(position rl.Vector3) entities.Object {
+func createDebugCube(position rl.Vector3, color rl.Color) entities.Object {
 	return entities.Object{
 		Model:     levels.NewModelFromCollider(colliders.NewCubeCollider(rl.Vector3{}, 0.1, 0.1, 0.1)),
 		DrawPoint: position,
-		Color:     rl.Pink,
+		Color:     color,
 	}
 }
 
