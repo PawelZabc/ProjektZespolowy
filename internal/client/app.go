@@ -88,6 +88,12 @@ func (a *App) update() {
 	if err := a.network.SendInput(inputData); err != nil {
 		fmt.Printf("Failed to send input: %v\n", err)
 	}
+	
+	// updating player "cursor" 
+	if a.config.DebugMode {
+		playerRay := a.camera.GetPlayerCameraRay()
+		a.gameState.UpdateRayCollision(playerRay)
+	}
 
 }
 
