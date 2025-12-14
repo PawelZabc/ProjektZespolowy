@@ -13,6 +13,18 @@ type CylinderCollider struct {
 	Height   float32
 }
 
+func (c CylinderCollider) GetSizeOnAxis(axis types.Direction) float32 {
+	switch axis {
+	case types.DirX:
+		return c.Radius
+	case types.DirY:
+		return c.Height
+	case types.DirZ:
+		return c.Radius
+	}
+	return 0
+}
+
 func (c CylinderCollider) GetSides(position rl.Vector2) (rl.Vector2, rl.Vector2) {
 	cylinderPosition := GetVector2XZ(c.Position)
 	difference := rl.Vector2Subtract(cylinderPosition, position)

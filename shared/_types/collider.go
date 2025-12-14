@@ -10,6 +10,7 @@ type Collider interface {
 	SetPosition(rl.Vector3)
 	AddPosition(rl.Vector3)
 	PushbackFrom(Collider) Direction
+	GetSizeOnAxis(Direction) float32
 }
 
 type Change struct {

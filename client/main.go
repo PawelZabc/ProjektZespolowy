@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"strconv"
 	"time"
 
 	"github.com/PawelZabc/ProjektZespolowy/client/assets"
@@ -64,6 +65,7 @@ func main() {
 	} //create player
 
 	players := make(map[uint16]*entities.Actor)
+	playerHp := 0
 	createPlayer := func(Id uint16, Position rl.Vector3, Rotation float32) {
 		cylinder := s_entities.NewCylinderCollider(Position, 0.5, 1) //if it doesnt create it
 		players[Id] = entities.NewActor(cylinder, rl.Vector3{}, (Rotation*rl.Rad2deg)+90, assets.ModelPlayer)
@@ -101,8 +103,10 @@ func main() {
 				}
 			}
 			player.Colliders[0].SetPosition(data.Position)
+			playerHp = int(data.Hp)
 			enemy.SetPosition(data.Enemy.Position)
 			enemy.Rotation = -data.Enemy.Rotation
+			enemy.SetAnimation(data.Enemy.Animation)
 		}
 	}()
 
@@ -244,6 +248,7 @@ func main() {
 		enemy.Draw()
 		rl.EndMode3D()
 		rl.DrawText("Collision demo", 10, 10, 20, rl.Black)
+		rl.DrawText("Player hp:"+strconv.Itoa(playerHp), 10, 40, 20, rl.Black)
 		rl.EndDrawing()
 	}
 }

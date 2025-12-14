@@ -14,6 +14,25 @@ type PlaneCollider struct {
 	Height    float32
 }
 
+func (p PlaneCollider) GetSizeOnAxis(axis types.Direction) float32 { //test this
+	if axis == p.Direction || axis == -p.Direction {
+		return 0
+	}
+	switch axis {
+	case types.DirX:
+		return p.Width
+	case types.DirY:
+		return p.Height
+	case types.DirZ:
+		if p.Direction == types.DirX {
+			return p.Width
+		} else {
+			return p.Height
+		}
+	}
+	return 0
+}
+
 func (p *PlaneCollider) AddPosition(pos rl.Vector3) {
 	p.Position = rl.Vector3Add(p.Position, pos)
 }

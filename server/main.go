@@ -52,11 +52,13 @@ func main() {
 
 			if _, ok := clients[clientAddr.String()]; !ok { //check if the address is new
 				clients[clientAddr.String()] = &s_entities.Player{ //add new client to player map
-					Velocity: rl.Vector3{},
-					Collider: s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5 /*add to opts*/, 1 /*add to opts*/), //add to opts
-					Speed:    0.1,                                                                                            //add to opts
-					Address:  clientAddr,
-					Id:       newPlayerId,
+					Velocity:    rl.Vector3{},
+					Collider:    s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5 /*add to opts*/, 1 /*add to opts*/), //add to opts
+					Speed:       0.1,                                                                                            //add to opts
+					Address:     clientAddr,
+					Id:          newPlayerId,
+					LastMessage: numberOFUpdates,
+					Hp:          100,
 				}
 				newPlayerId++
 				fmt.Println("New client:", clientAddr)
@@ -108,15 +110,17 @@ func main() {
 			}
 			player.PushbackFrom(enemy.Collider)
 		}
-		enemy.UpdateTarget(players, &objects)
-		enemy.Move()
+		enemy.Update(players, &objects)
 		for _, obj := range objects { //collide with every object
 			if obj != nil {
 				enemy.Collider.PushbackFrom(obj)
 			}
 		}
 		for _, player := range clients {
-			enemy.Collider.PushbackFrom(player.Collider)
+			if enemy.Collider.PushbackFrom(player.Collider) != types.DirNone {
+				enemy.SetState(types.Attacking)
+			}
+
 		}
 
 	}
@@ -147,9 +151,10 @@ func main() {
 					}
 					udpSend := udp_data.ServerData{}
 					udpSend.Position = player.GetPosition()
+					udpSend.Hp = player.Hp
 					udpSend.Players = players
-					udpSend.Enemy = udp_data.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX}
-					conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address) //send data
+					udpSend.Enemy = udp_data.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX, Animation: uint8(enemy.State)} //currently send enemy state instead of animation until animations will be added
+					conn.WriteToUDP(udp_data.SerializeServerData(udpSend), player.Address)                                                               //send data
 				}
 			}
 
