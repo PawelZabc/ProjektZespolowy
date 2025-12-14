@@ -63,19 +63,27 @@ func main() {
 	player := game.Object{Colliders: []types.Collider{playerCollider},
 		Model: game.NewModelFromCollider(playerCollider),
 	} //create player
+	shader := rl.LoadShader("assets/shaders/lighting_v2.vs", "assets/shaders/lighting_v2.fs")
+
+	// Set view position uniform
+	*shader.Locs = rl.GetShaderLocation(shader, "viewPos")
+
+	ambientLoc := rl.GetShaderLocation(shader, "ambient")
+	ambient := []float32{0.1, 0.1, 0.1, 1.0}
+	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
 
 	players := make(map[uint16]*entities.Actor)
 	playerHp := 0
 	createPlayer := func(Id uint16, Position rl.Vector3, Rotation float32) {
 		cylinder := s_entities.NewCylinderCollider(Position, 0.5, 1) //if it doesnt create it
-		players[Id] = entities.NewActor(cylinder, rl.Vector3{}, (Rotation*rl.Rad2deg)+90, assets.ModelPlayer)
+		players[Id] = entities.NewActor(cylinder, rl.Vector3{}, (Rotation*rl.Rad2deg)+90, assets.ModelPlayer, shader)
 
 	}
-	cylinder := s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1)     //if it doesnt create it
-	testPlayer := entities.NewActor(cylinder, rl.Vector3{}, 0, assets.ModelPlayer) //load player model
+	cylinder := s_entities.NewCylinderCollider(rl.NewVector3(0, 0, 0), 0.5, 1)             //if it doesnt create it
+	testPlayer := entities.NewActor(cylinder, rl.Vector3{}, 0, assets.ModelPlayer, shader) //load player model
 	fmt.Println(testPlayer)
 
-	enemy := entities.NewActor(s_entities.NewCylinderCollider(rl.NewVector3(15, 0, 15), 1, 2), rl.Vector3{}, -45, assets.ModelGhost)
+	enemy := entities.NewActor(s_entities.NewCylinderCollider(rl.NewVector3(15, 0, 15), 1, 2), rl.Vector3{}, -45, assets.ModelGhost, shader)
 
 	go func() { //go routine for receving messages
 		buffer := make([]byte, 1024)
@@ -112,16 +120,6 @@ func main() {
 
 	// objects := []*entities.Object{}
 	//create objects
-
-	shader := rl.LoadShader("assets/shaders/lighting_v2.vs", "assets/shaders/lighting_v2.fs")
-
-	// Set view position uniform
-	*shader.Locs = rl.GetShaderLocation(shader, "viewPos")
-
-	ambientLoc := rl.GetShaderLocation(shader, "ambient")
-	ambient := []float32{0.1, 0.1, 0.1, 1.0}
-	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
-
 
 	pointObject := game.Object{Model: game.NewModelFromCollider(s_entities.NewCubeCollider(rl.Vector3{}, 0.1, 0.1, 0.1)),
 		Color: rl.Black,
@@ -176,7 +174,6 @@ func main() {
 	)
 	light3.Enabled = 1 // ON is default
 	light3.UpdateValues()
-
 
 	lockMouse := false
 	justClicked := false
@@ -298,8 +295,7 @@ func main() {
 			pointObject.Draw()
 		} //draw the intersection point of player ray
 
-
-		entities.DrawActorsMap(players)    //draw players
+		entities.DrawActorsMap(players) //draw players
 
 		game.DrawRoom(&rooms[currentRoom]) //draw the room the player is currently in
 		enemy.Draw()

@@ -56,9 +56,10 @@ func (a *Actor) Draw() {
 	rl.DrawModelEx(a.Object.Model, rl.Vector3Add(a.Object.DrawPoint, a.Colliders[0].GetPosition()), rl.NewVector3(0, 1, 0), a.Rotation, rl.Vector3One(), a.Object.Color)
 }
 
-func NewActor(collider types.Collider, drawPoint rl.Vector3, rotation float32, modelName string) *Actor {
+func NewActor(collider types.Collider, drawPoint rl.Vector3, rotation float32, modelName string, shader rl.Shader) *Actor {
 	// fmt.Println("Pre Load Actor Model !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	model, _ := assets.GlobalManager.LoadModel(modelName)
+	game.SetShaderForAllMaterials(&model.Data, shader)
 	// fmt.Println("Load Actor Model Error", err)
 	object := game.Object{Model: model.Data, DrawPoint: drawPoint, Color: rl.White, Colliders: []types.Collider{collider}}
 	actor := Actor{Object: object, Rotation: rotation}
