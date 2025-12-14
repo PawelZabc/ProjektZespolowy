@@ -4,3 +4,5 @@ bin/
 env*
 !env.example
 
+*assets_gen.go
+
