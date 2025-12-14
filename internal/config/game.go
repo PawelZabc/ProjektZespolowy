@@ -13,10 +13,11 @@ var (
 )
 
 const (
-	PlayerRadius = float32(0.5)
-	PlayerHeight = float32(1.0)
-	PlayerSpeed  = float32(0.1)
-	JumpStrength = float32(0.1)
+	PlayerRadius       = float32(0.5)
+	PlayerHeight       = float32(1.0)
+	PlayerCameraHeight = float32(0.8)
+	PlayerSpeed        = float32(0.1)
+	JumpStrength       = float32(0.1)
 )
 
 // Other

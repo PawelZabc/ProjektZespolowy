@@ -16,10 +16,9 @@ type Camera struct {
 func NewCamera() *Camera {
 	return &Camera{
 		camera: rl.Camera{
-			// initial camera settings
-			Position:   rl.NewVector3(0, 4.0, 4.0),
-			Target:     rl.NewVector3(0.0, 1.0, 0.0),
-			Up:         rl.NewVector3(0.0, 1.0, 0.0),
+			Position:   rl.NewVector3(0, 4.0, 4.0),   // inicial pos
+			Target:     rl.NewVector3(0.0, 1.0, 0.0), // inicial target
+			Up:         rl.NewVector3(0.0, 1.0, 0.0), // never changes
 			Fovy:       config.CameraFov,
 			Projection: rl.CameraPerspective,
 		},
@@ -55,7 +54,7 @@ func (c *Camera) UpdatePosition(playerPos rl.Vector3) {
 	target := c.calculateTargetDirection()
 
 	// Position camera at player position with offset
-	c.camera.Position = rl.Vector3Add(playerPos, rl.NewVector3(0, 0.5, 0))
+	c.camera.Position = rl.Vector3Add(playerPos, rl.NewVector3(0, config.PlayerCameraHeight, 0))
 	c.camera.Target = rl.Vector3Add(target, c.camera.Position)
 }
 
@@ -81,7 +80,7 @@ func (c *Camera) GetRotationY() float32 {
 	return c.rotationY
 }
 
-func (c *Camera) GetPlayerRay() colliders.Ray {
+func (c *Camera) GetPlayerCameraRay() colliders.Ray {
 	direction := c.calculateTargetDirection()
 
 	return colliders.Ray{
