@@ -79,7 +79,7 @@ func (e *Enemy) Move() {
 		movement := rl.Vector2Scale(direction, e.Speed)
 		velocity := GetVector3FromXZ(movement)
 		e.Collider.AddPosition(velocity)
-		if rl.Vector2Length(rl.Vector2Subtract(*e.Target, GetVector2XZ(e.Collider.GetPosition()))) < 0.5 {
+		if rl.Vector2Length(rl.Vector2Subtract(*e.Target, GetVector2XZ(e.Collider.GetPosition()))) < 1 {
 			e.Target = nil
 		}
 

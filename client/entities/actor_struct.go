@@ -42,7 +42,7 @@ func (a *Actor) SetAnimation(anim uint8) {
 func (a *Actor) UpdateAnimation() { //change this when the actual animation gets added
 	if a.Animation == uint8(types.Attacking) {
 		notRed := 255 - (8 * a.AnimationFrame)
-		if a.AnimationFrame > 50 {
+		if a.AnimationFrame > 32 {
 			notRed = 0
 		}
 		a.Color = rl.NewColor(255, notRed, notRed, 255)
