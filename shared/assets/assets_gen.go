@@ -19,9 +19,16 @@ const (
 	TexturePlaceholder = "placeholder.png"
 )
 
+// Images from images/
+const (
+	ImagePlayer = "player.png"
+)
+
 // Shaders from shaders/
 const (
 	ShaderLightingFS = "lighting.fs"
 	ShaderLightingVS = "lighting.vs"
+	ShaderLightingV2FS = "lighting_v2.fs"
+	ShaderLightingV2VS = "lighting_v2.vs"
 )
 

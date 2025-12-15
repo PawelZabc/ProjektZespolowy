@@ -19,6 +19,72 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+func DrawTextOutlined(
+	text string,
+	x, y int32,
+	fontSize int32,
+	textColor, outlineColor rl.Color,
+	thickness int32,
+) {
+	// Draw outline
+	for ox := -thickness; ox <= thickness; ox++ {
+		for oy := -thickness; oy <= thickness; oy++ {
+			if ox == 0 && oy == 0 {
+				continue
+			}
+			rl.DrawText(text, x+ox, y+oy, fontSize, outlineColor)
+		}
+	}
+
+	// Draw main text
+	rl.DrawText(text, x, y, fontSize, textColor)
+}
+
+func DrawHPBar(
+	x, y int32,
+	width, height int32,
+	current, max int,
+	backColor, borderColor rl.Color,
+) {
+	if max <= 0 {
+		return
+	}
+
+	if current < 0 {
+		current = 0
+	}
+	if current > max {
+		current = max
+	}
+
+	pom := float32(current) / float32(max)
+
+	var r, g uint8
+
+	if pom >= 0.5 {
+		pom = (1 - pom) * 2
+		r = uint8(255 * pom)
+		g = 255
+	} else {
+		r = 255
+		pom = pom * 2
+		g = uint8(255 * pom)
+	}
+
+	fillColor := rl.Color{R: r, G: g, B: 0, A: 255}
+	percent := float32(current) / float32(max)
+	fillWidth := int32(float32(width) * percent)
+
+	// Border
+	rl.DrawRectangle(x-2, y-2, width+4, height+4, borderColor)
+
+	// Background
+	rl.DrawRectangle(x, y, width, height, backColor)
+
+	// Fill
+	rl.DrawRectangle(x, y, fillWidth, height, fillColor)
+}
+
 func init() {
 	assets.Init()
 }
@@ -122,7 +188,6 @@ func main() {
 	ambient := []float32{0.1, 0.1, 0.1, 1.0}
 	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
 
-
 	pointObject := game.Object{Model: game.NewModelFromCollider(s_entities.NewCubeCollider(rl.Vector3{}, 0.1, 0.1, 0.1)),
 		Color: rl.Black,
 	}
@@ -177,9 +242,10 @@ func main() {
 	light3.Enabled = 1 // ON is default
 	light3.UpdateValues()
 
-
 	lockMouse := false
 	justClicked := false
+
+	playerImg := rl.LoadTexture("assets/images/player.png")
 
 	udpSend := udp_data.ClientData{}
 	for !rl.WindowShouldClose() {
@@ -298,14 +364,28 @@ func main() {
 			pointObject.Draw()
 		} //draw the intersection point of player ray
 
-
-		entities.DrawActorsMap(players)    //draw players
+		entities.DrawActorsMap(players) //draw players
 
 		game.DrawRoom(&rooms[currentRoom]) //draw the room the player is currently in
 		enemy.Draw()
 		rl.EndMode3D()
-		rl.DrawText("Collision demo", 10, 10, 20, rl.Black)
-		rl.DrawText("Player hp:"+strconv.Itoa(playerHp), 10, 40, 20, rl.Black)
+
+		// draw UI
+
+		rl.DrawTextureEx(
+			playerImg,
+			rl.Vector2{X: 10, Y: 490},
+			0.0,  // rotation
+			0.04, // scale
+			rl.White,
+		)
+
+		DrawTextOutlined("G demo", 10, 10, 20, rl.Black, rl.LightGray, 2)
+
+		DrawTextOutlined("Player hp:"+strconv.Itoa(playerHp), 160, 540, 20, rl.Black, rl.White, 2)
+
+		DrawHPBar(160, 570, 150, 12, playerHp, 100, rl.Black, rl.White)
+
 		rl.EndDrawing()
 	}
 }
