@@ -5,3 +5,5 @@ env*
 !env.example
 
 .golangci.yml
+
+*assets_gen.go
