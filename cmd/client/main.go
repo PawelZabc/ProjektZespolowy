@@ -8,11 +8,11 @@ import (
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
 )
 
+//go:generate go run ../../pkg/assets_name_gen/main.go
+
 func init() {
 	assets.Init()
 }
-// TODO: fix generating assets names
-//go:generate go run ../../pkg/assets_name_gen/main.go
 
 func main() {
 	cfg := config.DefaultClientConfig() // default is good for now, but it can be overwritten below
@@ -22,7 +22,6 @@ func main() {
 		log.Fatalf("Application error: %v", err)
 	}
 }
-
 
 // for now i will leave this code below
 // package main
