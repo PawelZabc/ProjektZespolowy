@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/input"
 )
 
 type ClientData struct {
-	Inputs    []shared.PlayerAction
+	Inputs    []input.PlayerAction
 	RotationX float32
 	RotationY float32
 }
@@ -35,7 +35,7 @@ func DeserializeClientData(buf []byte) ClientData {
 	binary.Read(b, binary.LittleEndian, &size)
 	binary.Read(b, binary.LittleEndian, &c.RotationX)
 	binary.Read(b, binary.LittleEndian, &c.RotationY)
-	c.Inputs = make([]shared.PlayerAction, size)
+	c.Inputs = make([]input.PlayerAction, size)
 	for i := range size {
 		binary.Read(b, binary.LittleEndian, &c.Inputs[i])
 	}

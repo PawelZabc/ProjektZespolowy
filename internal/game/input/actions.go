@@ -1,4 +1,4 @@
-package shared
+package input
 
 type PlayerAction uint8
 

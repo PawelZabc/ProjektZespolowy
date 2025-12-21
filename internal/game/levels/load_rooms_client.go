@@ -5,8 +5,8 @@ package levels
 import (
 	"github.com/PawelZabc/ProjektZespolowy/assets"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
-	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	"github.com/chewxy/math32"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -123,15 +123,15 @@ func NewModelFromPlaneCollider(collider *colliders.PlaneCollider) rl.Model {
 	modelData, _ := assets.GlobalManager.LoadModel(assets.ModelCube)
 	model := modelData.Data
 	switch collider.Direction {
-	case shared.DirX, shared.DirXminus:
+	case physics.DirX, physics.DirXminus:
 		{
 			model.Transform = rl.MatrixScale(0.01, collider.Height, collider.Width)
 		}
-	case shared.DirY, shared.DirYminus:
+	case physics.DirY, physics.DirYminus:
 		{
 			model.Transform = rl.MatrixScale(collider.Width, 0.01, collider.Height)
 		}
-	case shared.DirZ, shared.DirZminus:
+	case physics.DirZ, physics.DirZminus:
 		{
 			model.Transform = rl.MatrixScale(collider.Width, collider.Height, 0.01)
 		}
@@ -151,15 +151,15 @@ func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height 
 	walls := make([]colliders.Collider, len(Changes))
 	skipped := 0
 	for i, change := range Changes {
-		if change.Axis == shared.DirX {
-			change.Axis = shared.DirZ
+		if change.Axis == physics.DirX {
+			change.Axis = physics.DirZ
 		} else {
-			change.Axis = shared.DirX
+			change.Axis = physics.DirX
 		}
 
 		var object colliders.PlaneCollider
 		if change.Value < 0 {
-			if change.Axis == shared.DirX {
+			if change.Axis == physics.DirX {
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(0, 0, change.Value))
 			} else {
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(change.Value, 0, 0))
@@ -172,7 +172,7 @@ func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height 
 			skipped += 1
 		}
 		if change.Value > 0 {
-			if change.Axis == shared.DirX {
+			if change.Axis == physics.DirX {
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(0, 0, change.Value))
 			} else {
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(change.Value, 0, 0))

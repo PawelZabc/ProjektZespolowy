@@ -1,14 +1,14 @@
 package colliders
 
 import (
-	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type PlaneCollider struct {
 	Position  rl.Vector3
-	Direction shared.Direction
+	Direction physics.Direction
 	Width     float32
 	Height    float32
 }
@@ -25,15 +25,15 @@ func (p *PlaneCollider) GetPosition() rl.Vector3 {
 	return p.Position
 }
 
-func (p *PlaneCollider) PushbackFrom(Collider) shared.Direction {
-	return shared.DirNone
+func (p *PlaneCollider) PushbackFrom(Collider) physics.Direction {
+	return physics.DirNone
 }
 
 func (p *PlaneCollider) SetPosition(pos rl.Vector3) {
 	p.Position = pos
 }
 
-func NewPlaneCollider(position rl.Vector3, Width float32, Height float32, Direction shared.Direction) *PlaneCollider {
+func NewPlaneCollider(position rl.Vector3, Width float32, Height float32, Direction physics.Direction) *PlaneCollider {
 	return &PlaneCollider{
 		Position:  position,
 		Width:     Width,

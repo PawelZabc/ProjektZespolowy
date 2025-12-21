@@ -1,7 +1,7 @@
 package colliders
 
 import (
-	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -10,5 +10,5 @@ type Collider interface {
 	GetPosition() rl.Vector3
 	SetPosition(rl.Vector3)
 	AddPosition(rl.Vector3)
-	PushbackFrom(Collider) shared.Direction
+	PushbackFrom(Collider) physics.Direction
 }

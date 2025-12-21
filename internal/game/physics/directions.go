@@ -1,4 +1,4 @@
-package shared
+package physics
 
 type Direction int8
 

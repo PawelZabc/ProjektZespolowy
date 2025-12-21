@@ -1,7 +1,7 @@
 package colliders
 
 import (
-	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	math "github.com/chewxy/math32"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -46,18 +46,18 @@ func (c *CubeCollider) AddPosition(vec rl.Vector3) {
 	c.Position = rl.Vector3Add(c.Position, vec)
 }
 
-func (c *CubeCollider) PushbackFrom(c2 Collider) shared.Direction {
+func (c *CubeCollider) PushbackFrom(c2 Collider) physics.Direction {
 	if cube, ok := c2.(*CubeCollider); ok {
 		return c.PushbackFromCube(cube)
 	} else if cylinder, ok := c2.(*CylinderCollider); ok {
 		return c.PushbackFromCylinder(cylinder)
 	}
 
-	return shared.DirNone
+	return physics.DirNone
 
 }
 
-func (c *CubeCollider) PushbackFromCube(cube *CubeCollider) shared.Direction {
+func (c *CubeCollider) PushbackFromCube(cube *CubeCollider) physics.Direction {
 	x1 := c.Position.X - (cube.Position.X + cube.SizeX)
 	x2 := cube.Position.X - (c.Position.X + c.SizeX)
 	y1 := c.Position.Y - (cube.Position.Y + cube.SizeY)
@@ -74,47 +74,47 @@ func (c *CubeCollider) PushbackFromCube(cube *CubeCollider) shared.Direction {
 			if xmax > ymax {
 				if x1 > x2 {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(-x1, 0, 0))
-					return shared.DirX
+					return physics.DirX
 				} else {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(x2, 0, 0))
-					return -shared.DirX
+					return -physics.DirX
 				}
 			} else {
 				if y1 > y2 {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -y1, 0))
-					return -shared.DirY
+					return -physics.DirY
 				} else {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, y2, 0))
-					return shared.DirY
+					return physics.DirY
 				}
 			}
 		} else {
 			if zmax > ymax {
 				if z1 > z2 {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, 0, -z1))
-					return shared.DirZ
+					return physics.DirZ
 				} else {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, 0, z2))
-					return -shared.DirZ
+					return -physics.DirZ
 				}
 			} else {
 				if y1 > y2 {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -y1, 0))
-					return -shared.DirY
+					return -physics.DirY
 				} else {
 					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, y2, 0))
-					return shared.DirY
+					return physics.DirY
 				}
 
 			}
 
 		}
 	} else {
-		return shared.DirNone
+		return physics.DirNone
 	}
 }
 
-func (c *CubeCollider) PushbackFromCylinder(cylinder *CylinderCollider) shared.Direction {
+func (c *CubeCollider) PushbackFromCylinder(cylinder *CylinderCollider) physics.Direction {
 	diffrence := rl.Vector2Subtract(
 		rl.Vector2{X: math.Min(c.Position.X+c.SizeX, math.Max(c.Position.X, cylinder.Position.X)),
 			Y: math.Min(c.Position.Z+c.SizeZ, math.Max(c.Position.Z, cylinder.Position.Z))},
@@ -128,17 +128,17 @@ func (c *CubeCollider) PushbackFromCylinder(cylinder *CylinderCollider) shared.D
 
 			forceXZ := rl.Vector2Scale(rl.Vector2Normalize(diffrence), -distanceXZ)
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(forceXZ.X, 0, forceXZ.Y))
-			return shared.DirXZ
+			return physics.DirXZ
 
 		} else if distanceY1 > distanceY2 {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
-			return -shared.DirY
+			return -physics.DirY
 		} else {
 			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
-			return shared.DirY
+			return physics.DirY
 		}
 	} else {
-		return shared.DirNone
+		return physics.DirNone
 	}
 
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
-	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -41,10 +40,11 @@ func (p *Player) AddPosition(vec rl.Vector3) {
 func (p *Player) PushbackFrom(collider colliders.Collider) {
 	if collider != nil {
 		direction := p.Collider.PushbackFrom(collider)
-		if direction == shared.DirYminus {
+		switch direction {
+		case physics.DirYminus:
 			p.IsOnFloor = true
 			p.Velocity.Y = 0
-		} else if direction == shared.DirY {
+		case physics.DirY:
 			p.Velocity.Y = 0
 		}
 	}

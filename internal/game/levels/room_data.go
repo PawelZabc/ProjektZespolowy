@@ -1,8 +1,8 @@
 package levels
 
 import (
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
-	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	"github.com/chewxy/math32"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -49,9 +49,9 @@ func MakeFloorAndCeilingForWalls(wallColliders []colliders.Collider, startY floa
 	planeWidth := math32.Abs(minVector.X - maxVector.X) //calculate the size of the plane
 	planeHeight := math32.Abs(minVector.Z - maxVector.Z)
 	minVector.Y = startY
-	floor := colliders.NewPlaneCollider(minVector, planeWidth, planeHeight, shared.DirY)
+	floor := colliders.NewPlaneCollider(minVector, planeWidth, planeHeight, physics.DirY)
 	minVector.Y = minVector.Y + endY
-	ceiling := colliders.NewPlaneCollider(minVector, planeWidth, planeHeight, -shared.DirY)
+	ceiling := colliders.NewPlaneCollider(minVector, planeWidth, planeHeight, -physics.DirY)
 	return floor, ceiling
 }
 

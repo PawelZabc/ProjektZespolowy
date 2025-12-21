@@ -2,7 +2,6 @@ package colliders
 
 import (
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
-	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	"github.com/chewxy/math32"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -28,14 +27,14 @@ func (r *Ray) GetRotationX() float32 {
 	return physics.GetRotationX(physics.GetVector2XZ(r.Direction))
 }
 
-func (r *Ray) GetCollisionPointWithAxis(distance float32, plane shared.Direction) (*rl.Vector3, float32) {
+func (r *Ray) GetCollisionPointWithAxis(distance float32, plane physics.Direction) (*rl.Vector3, float32) {
 	direction := float32(0)
 	switch plane {
-	case shared.DirX:
+	case physics.DirX:
 		direction = r.Direction.X
-	case shared.DirY, shared.DirYminus:
+	case physics.DirY, physics.DirYminus:
 		direction = r.Direction.Y
-	case shared.DirZ:
+	case physics.DirZ:
 		direction = r.Direction.Z
 	}
 
@@ -56,17 +55,17 @@ func (r *Ray) GetCollisionPointWithCube(cube CubeCollider) (*rl.Vector3, float32
 	var points = []*rl.Vector3{nil, nil, nil}
 	var lengths = []float32{0, 0, 0}
 	//X---------------------------------------------------------------------------
-	points[0], lengths[0] = r.GetCollisionPointWithAxis(physics.GetCloserWallOnSameAxis(r.Origin.X, cube.Position.X, cube.Position.X+cube.SizeX), shared.DirX)
+	points[0], lengths[0] = r.GetCollisionPointWithAxis(physics.GetCloserWallOnSameAxis(r.Origin.X, cube.Position.X, cube.Position.X+cube.SizeX), physics.DirX)
 	if !(points[0].Z >= cube.Position.Z && points[0].Z <= cube.Position.Z+cube.SizeZ && points[0].Y >= cube.Position.Y && points[0].Y <= cube.Position.Y+cube.SizeY) {
 		points[0] = nil // check if point is inside the bounds of the wall, if not set it to nil to invalidate it
 	}
 	//Y---------------------------------------------------------------------------
-	points[1], lengths[1] = r.GetCollisionPointWithAxis(physics.GetCloserWallOnSameAxis(r.Origin.Y, cube.Position.Y, cube.Position.Y+cube.SizeY), shared.DirY)
+	points[1], lengths[1] = r.GetCollisionPointWithAxis(physics.GetCloserWallOnSameAxis(r.Origin.Y, cube.Position.Y, cube.Position.Y+cube.SizeY), physics.DirY)
 	if !(points[1].Z >= cube.Position.Z && points[1].Z <= cube.Position.Z+cube.SizeZ && points[1].X >= cube.Position.X && points[1].X <= cube.Position.X+cube.SizeX) {
 		points[1] = nil
 	}
 	//Z---------------------------------------------------------------------------
-	points[2], lengths[2] = r.GetCollisionPointWithAxis(physics.GetCloserWallOnSameAxis(r.Origin.Z, cube.Position.Z, cube.Position.Z+cube.SizeZ), shared.DirZ)
+	points[2], lengths[2] = r.GetCollisionPointWithAxis(physics.GetCloserWallOnSameAxis(r.Origin.Z, cube.Position.Z, cube.Position.Z+cube.SizeZ), physics.DirZ)
 	if !(points[2].X >= cube.Position.X && points[2].X <= cube.Position.X+cube.SizeX && points[2].Y >= cube.Position.Y && points[2].Y <= cube.Position.Y+cube.SizeY) {
 		points[2] = nil
 	}
@@ -103,7 +102,7 @@ func (r *Ray) GetCollisionPointWithCylinder(cylinder CylinderCollider) (*rl.Vect
 			}
 		}
 	}
-	point, length := r.GetCollisionPointWithAxis(physics.GetCloserWallOnSameAxis(r.Origin.Y, cylinder.Position.Y, cylinder.Position.Y+cylinder.Height), shared.DirY)
+	point, length := r.GetCollisionPointWithAxis(physics.GetCloserWallOnSameAxis(r.Origin.Y, cylinder.Position.Y, cylinder.Position.Y+cylinder.Height), physics.DirY)
 	if point != nil && rl.Vector2Length(rl.Vector2Subtract(physics.GetVector2XZ(*point), physics.GetVector2XZ(cylinder.Position))) <= cylinder.Radius {
 		return point, length
 	}
@@ -112,17 +111,17 @@ func (r *Ray) GetCollisionPointWithCylinder(cylinder CylinderCollider) (*rl.Vect
 
 func (r *Ray) GetCollisionPointWithPlane(plane PlaneCollider) (*rl.Vector3, float32) {
 	switch plane.Direction {
-	case shared.DirX:
+	case physics.DirX:
 		point, length := r.GetCollisionPointWithAxis(plane.GetPosition().X-r.Origin.X, plane.Direction)
 		if point != nil && point.Z >= plane.Position.Z && point.Z <= plane.Position.Z+plane.Width && point.Y >= plane.Position.Y && point.Y <= plane.Position.Y+plane.Height {
 			return point, length
 		}
-	case shared.DirY, shared.DirYminus:
+	case physics.DirY, physics.DirYminus:
 		point, length := r.GetCollisionPointWithAxis(plane.GetPosition().Y-r.Origin.Y, plane.Direction)
 		if point != nil && point.X >= plane.Position.X && point.X <= plane.Position.X+plane.Width && point.Z >= plane.Position.Z && point.Z <= plane.Position.Z+plane.Height {
 			return point, length
 		}
-	case shared.DirZ:
+	case physics.DirZ:
 		point, length := r.GetCollisionPointWithAxis(plane.GetPosition().Z-r.Origin.Z, plane.Direction)
 		if point != nil && point.X >= plane.Position.X && point.X <= plane.Position.X+plane.Width && point.Y >= plane.Position.Y && point.Y <= plane.Position.Y+plane.Height {
 			return point, length

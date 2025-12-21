@@ -1,9 +1,11 @@
 package levels
 
-import "github.com/PawelZabc/ProjektZespolowy/internal/shared"
+import (
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
+)
 
 type Change struct {
 	Value float32
-	Axis  shared.Direction
+	Axis  physics.Direction
 	Skip  bool
 }
