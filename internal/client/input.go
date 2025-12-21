@@ -1,14 +1,15 @@
 package client
 
 import (
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/input"
 	"github.com/PawelZabc/ProjektZespolowy/internal/protocol"
-	"github.com/PawelZabc/ProjektZespolowy/internal/shared"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type Input struct {
 	mouseLocked bool
 	justClicked bool
+	inputBuffer []input.PlayerAction
 }
 
 func NewInput() *Input {
@@ -16,37 +17,37 @@ func NewInput() *Input {
 	return &Input{
 		mouseLocked: false,
 		justClicked: false,
+		inputBuffer: make([]input.PlayerAction, 0, 5),
 	}
 }
 
 // Gather input and rotation ans parse it to send to the server
 func (i *Input) ProcessInput(rotationX, rotationY float32) protocol.ClientData {
-	
-	i.handleMouseLockToggle()
 
-	inputs := make([]shared.PlayerAction, 0, 5)
+	i.inputBuffer = i.inputBuffer[:0] // resetting buffer without reallocation
+	i.handleMouseLockToggle()
 
 	// TODO: add keys in keymap
 	if rl.IsKeyDown(rl.KeyW) {
-		inputs = append(inputs, shared.MoveForward)
+		i.inputBuffer = append(i.inputBuffer, input.MoveForward)
 	}
 	if rl.IsKeyDown(rl.KeyS) {
-		inputs = append(inputs, shared.MoveBackward)
+		i.inputBuffer = append(i.inputBuffer, input.MoveBackward)
 	}
 	if rl.IsKeyDown(rl.KeyA) {
-		inputs = append(inputs, shared.MoveLeft)
+		i.inputBuffer = append(i.inputBuffer, input.MoveLeft)
 	}
 	if rl.IsKeyDown(rl.KeyD) {
-		inputs = append(inputs, shared.MoveRight)
+		i.inputBuffer = append(i.inputBuffer, input.MoveRight)
 	}
 	if rl.IsKeyDown(rl.KeySpace) {
-		inputs = append(inputs, shared.Jump)
+		i.inputBuffer = append(i.inputBuffer, input.Jump)
 	}
 
 	return protocol.ClientData{
 		RotationX: rotationX,
 		RotationY: rotationY,
-		Inputs:    inputs,
+		Inputs:    i.inputBuffer,
 	}
 }
 
