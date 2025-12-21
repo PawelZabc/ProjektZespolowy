@@ -21,6 +21,8 @@ type GameState struct {
 
 	rooms       []levels.ClientRoom
 	currentRoom int
+	shader      rl.Shader
+	lights      []entities.Light
 
 	rayCollisionPoint *rl.Vector3
 	mu                sync.RWMutex
@@ -40,7 +42,25 @@ func NewGameState() *GameState {
 		assets.ModelGhost,
 	)
 
-	rooms := levels.LoadRooms()
+	// TODO: Move this shady code to somewhere else
+	shaderPointer, err := assets.GlobalManager.LoadShader(assets.ShaderLightingV2VS, assets.ShaderLightingV2FS)
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	shader := shaderPointer.Data
+
+	// Set view position uniform
+	*shader.Locs = rl.GetShaderLocation(shader, "viewPos")
+
+	ambientLoc := rl.GetShaderLocation(shader, "ambient")
+	ambient := []float32{0.1, 0.1, 0.1, 1.0}
+	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
+
+	rooms := levels.LoadRooms(shader)
+
+	lights := createLights(shader)
 
 	// loading player model into memory - TODO: FIX
 	// due to bug with loading model in another thread (OpenGL context is limited to one)
@@ -52,6 +72,8 @@ func NewGameState() *GameState {
 		players:     make(map[uint16]*entities.Actor),
 		enemy:       enemy,
 		rooms:       rooms,
+		shader:      shader,
+		lights:      lights,
 		currentRoom: 0,
 	}
 }
@@ -66,7 +88,7 @@ func (gs *GameState) UpdateFromClient() {
 func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
-	
+
 	gs.player.Colliders[0].SetPosition(data.Position)
 
 	gs.enemy.SetPosition(data.Enemy.Position)
@@ -92,6 +114,46 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 			delete(gs.players, id)
 		}
 	}
+}
+
+func (gs *GameState) GetShader() rl.Shader {
+	return gs.shader
+}
+
+func createLights(shader rl.Shader) []entities.Light {
+	var lights []entities.Light
+
+	light1 := entities.NewLight(
+		entities.LightTypePoint,
+		rl.NewVector3(0, 2.9, 0), // light position
+		rl.NewVector3(0, 0, 0),   // target (unused for point light)
+		rl.White,                 // light color
+		shader,
+	)
+	light1.UpdateValues()
+
+	light2 := entities.NewLight(
+		entities.LightTypePoint,
+		rl.NewVector3(5, 2.9, -5), // light position
+		rl.NewVector3(0, 0, 0),    // target (unused for point light)
+		rl.White,                  // light color
+		shader,
+	)
+	light2.UpdateValues()
+
+	light3 := entities.NewLight(
+		entities.LightTypePoint,
+		rl.NewVector3(5, 2.9, 5), // light position
+		rl.NewVector3(0, 0, 0),   // target (unused for point light)
+		rl.White,                 // light color
+		shader,
+	)
+	light3.Enabled = 1 // ON is default
+	light3.UpdateValues()
+
+	lights = append(lights, light1, light2, light3)
+
+	return lights
 }
 
 // Creates a new remote player

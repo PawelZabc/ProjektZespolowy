@@ -88,6 +88,15 @@ func (a *App) update() {
 	a.camera.Update(centerX, centerY, a.input.IsMouseLocked())
 	a.camera.UpdatePosition(a.gameState.GetPlayerPosition())
 
+	camera := a.camera.GetCamera()
+	shader := a.gameState.GetShader()
+	cameraPos := []float32{
+		camera.Position.X,
+		camera.Position.Y,
+		camera.Position.Z,
+	}
+	rl.SetShaderValue(shader, *shader.Locs, cameraPos, rl.ShaderUniformVec3)
+
 	if err := a.network.SendInput(inputData); err != nil {
 		fmt.Printf("Failed to send input: %v\n", err)
 	}

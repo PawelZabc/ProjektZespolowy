@@ -3,6 +3,9 @@ package levels
 // CLIENT LOAD ROOMS
 
 import (
+	"fmt"
+	"unsafe"
+
 	"github.com/PawelZabc/ProjektZespolowy/assets"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
@@ -11,12 +14,12 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func LoadRooms() []ClientRoom {
+func LoadRooms(shader rl.Shader) []ClientRoom {
 	rooms := make([]ClientRoom, 0, 10)
 	roomShared := Room1
 	objects := make([]*entities.Object, 0, len(roomShared.Objects))
 	for _, object := range roomShared.Objects {
-		objects = append(objects, ConvertObjectSharedToClient(object))
+		objects = append(objects, ConvertObjectSharedToClient(object, shader))
 	}
 	room := ClientRoom{
 		Objects: objects,
@@ -27,8 +30,16 @@ func LoadRooms() []ClientRoom {
 	return rooms
 }
 
-func ConvertObjectSharedToClient(object *ObjectTWO) *entities.Object {
-	model := rl.Model{}
+func SetShaderForAllMaterials(model *rl.Model, shader rl.Shader) {
+	materials := (*[1 << 16]rl.Material)(unsafe.Pointer(model.Materials))[:model.MaterialCount:model.MaterialCount]
+	for i := range materials {
+		materials[i].Shader = shader
+	}
+}
+
+func ConvertObjectSharedToClient(object *ObjectTWO, shader rl.Shader) *entities.Object {
+	var model rl.Model
+
 	drawPoint := object.DrawPoint
 	if object.Model != "" {
 		model2, _ := assets.GlobalManager.LoadModel(object.Model)
@@ -37,6 +48,10 @@ func ConvertObjectSharedToClient(object *ObjectTWO) *entities.Object {
 		model = NewModelFromCollider(object.Colliders[0])
 		drawPoint = object.Colliders[0].GetPosition()
 	}
+
+	fmt.Println("MaterialCount:", model.MaterialCount)
+
+	SetShaderForAllMaterials(&model, shader)
 
 	objectClient := entities.Object{
 		Colliders: object.Colliders,

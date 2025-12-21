@@ -25,6 +25,7 @@ func (r *Renderer) RenderWorld(state *GameState) {
 	levels.DrawRoom(state.GetCurrentRoom())
 	entities.DrawActorsMap(state.GetPlayers())
 	state.GetEnemy().Draw()
+	r.renderLights(state.lights)
 
 	if r.debugMode {
 		r.renderDebug(state)
@@ -40,6 +41,12 @@ func (r *Renderer) RenderUI() {
 
 func (r *Renderer) SetDebugMode(enabled bool) {
 	r.debugMode = enabled
+}
+
+func (r Renderer) renderLights(lights []entities.Light) {
+	rl.DrawSphereEx(lights[0].Position, 0.2, 8, 8, rl.White)
+	rl.DrawSphereEx(lights[1].Position, 0.2, 8, 8, rl.White)
+	rl.DrawSphereEx(lights[2].Position, 0.2, 8, 8, rl.White)
 }
 
 // here you can put rendering basically everything, it can be turn off by debugMode flag

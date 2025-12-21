@@ -14,6 +14,7 @@ type Object struct {
 	DrawPoint rl.Vector3
 	Model     rl.Model
 	Color     rl.Color
+	Shader    rl.Shader
 }
 
 func (o Object) Draw() {
