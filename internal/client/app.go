@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
@@ -26,7 +27,7 @@ func NewApp(cfg config.ClientConfig) *App {
 
 func (a *App) Run() error {
 	a.initWindow() // init raylib
-	
+
 	defer a.cleanup() // end with cleanup
 
 	// init components like input, network, state, etc..
@@ -35,7 +36,9 @@ func (a *App) Run() error {
 	}
 
 	// goroutine to reveive messages and data from server
-	go a.network.StartReceiving()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go a.network.StartReceiving(ctx)
 
 	// initial connection to server
 	if err := a.network.SendHello(); err != nil {
@@ -88,8 +91,8 @@ func (a *App) update() {
 	if err := a.network.SendInput(inputData); err != nil {
 		fmt.Printf("Failed to send input: %v\n", err)
 	}
-	
-	// updating player "cursor" 
+
+	// updating player "cursor"
 	if a.config.DebugMode {
 		playerRay := a.camera.GetPlayerCameraRay()
 		a.gameState.UpdateRayCollision(playerRay)
