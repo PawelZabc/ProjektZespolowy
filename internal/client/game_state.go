@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/PawelZabc/ProjektZespolowy/assets"
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
@@ -22,6 +23,7 @@ type GameState struct {
 	currentRoom int
 
 	rayCollisionPoint *rl.Vector3
+	mu                sync.RWMutex
 }
 
 func NewGameState() *GameState {
@@ -62,6 +64,9 @@ func (gs *GameState) UpdateFromClient() {
 
 // Gather data from server and apply it on the client (executes in goroutine)
 func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+	
 	gs.player.Colliders[0].SetPosition(data.Position)
 
 	gs.enemy.SetPosition(data.Enemy.Position)
@@ -112,6 +117,8 @@ func (gs *GameState) GetCurrentRoom() *levels.ClientRoom {
 
 // Getter for other players
 func (gs *GameState) GetPlayers() map[uint16]*entities.Actor {
+	gs.mu.RLock()
+	defer gs.mu.RUnlock()
 	return gs.players
 }
 
