@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"time"
@@ -38,17 +39,22 @@ func NewNetwork(serverIP string, port int, gameState *GameState) (*Network, erro
 	}, nil
 }
 
-func (n *Network) StartReceiving() {
+func (n *Network) StartReceiving(ctx context.Context) {
 	for {
-		// timeout to 1s - maybe move to config?
-		n.conn.SetReadDeadline(time.Now().Add(1 * time.Second))
-		bytesRead, _, err := n.conn.ReadFromUDP(n.buffer)
-		if err != nil {
-			continue
-		}
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			// timeout to 1s - maybe move to config?
+			n.conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+			bytesRead, _, err := n.conn.ReadFromUDP(n.buffer)
+			if err != nil {
+				continue
+			}
 
-		serverData := protocol.DeserializeServerData(n.buffer[:bytesRead])
-		n.gameState.UpdateFromServer(serverData)
+			serverData := protocol.DeserializeServerData(n.buffer[:bytesRead])
+			n.gameState.UpdateFromServer(serverData)
+		}
 	}
 }
 
