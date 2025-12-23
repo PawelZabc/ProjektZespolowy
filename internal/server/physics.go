@@ -3,7 +3,9 @@ package server
 import (
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/state"
 )
 
 // Physics handles all physics simulation
@@ -44,9 +46,7 @@ func (p *Physics) updatePlayers(players []*entities.Player, objects []colliders.
 }
 
 func (p *Physics) updateEnemy(players []*entities.Player, objects []colliders.Collider, enemy *entities.Enemy) {
-	enemy.UpdateTarget(players, &objects)
-
-	enemy.Move()
+	enemy.Update(players, &objects)
 
 	for _, obj := range objects {
 		if obj != nil {
@@ -55,6 +55,8 @@ func (p *Physics) updateEnemy(players []*entities.Player, objects []colliders.Co
 	}
 
 	for _, player := range players {
-		enemy.Collider.PushbackFrom(player.Collider)
+		if enemy.Collider.PushbackFrom(player.Collider) != physics.DirNone {
+			enemy.SetState(state.Attacking)
+		}
 	}
 }
