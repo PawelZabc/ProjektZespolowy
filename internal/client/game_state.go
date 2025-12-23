@@ -64,6 +64,9 @@ func NewGameState() *GameState {
 	ambientLoc := rl.GetShaderLocation(shader, "ambient")
 	ambient := []float32{0.1, 0.1, 0.1, 1.0}
 	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
+	
+	// TODO: figure out what to do with that
+	levels.SetShaderForAllMaterials(&enemy.Model, shader)
 
 	rooms := levels.LoadRooms(shader)
 
@@ -76,7 +79,6 @@ func NewGameState() *GameState {
 
 	return &GameState{
 		player:       player,
-		playerHp:     50,
 		playerAvatar: playerAvatar,
 		players:      make(map[uint16]*entities.Actor),
 		enemy:        enemy,
@@ -99,9 +101,11 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	defer gs.mu.Unlock()
 
 	gs.player.Colliders[0].SetPosition(data.Position)
+	gs.playerHp = int(data.PlayerHp)
 
 	gs.enemy.SetPosition(data.Enemy.Position)
-	gs.enemy.Rotation = -data.Enemy.Rotation // why minus tho?
+	gs.enemy.Rotation = -data.Enemy.Rotation // ASK (to Pabox): why minus tho?
+	gs.enemy.SetAnimation(data.Enemy.AnimationFrame)
 
 	updatedPlayers := make(map[uint16]bool)
 
@@ -175,6 +179,7 @@ func (gs *GameState) createPlayer(id uint16, position rl.Vector3, rotation float
 		(rotation*rl.Rad2deg)+90,
 		assets.ModelPlayer,
 	)
+	levels.SetShaderForAllMaterials(&gs.players[id].Model, gs.shader)
 }
 
 // Local player position
