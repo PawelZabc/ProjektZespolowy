@@ -34,7 +34,7 @@ func (cm *ClientManager) HandleMessage(data []byte, addr *net.UDPAddr, updateCou
 
 	player, exists := cm.clients[addrStr]
 	if !exists {
-		cm.addClient(addr)
+		cm.addClient(addr, updateCount)
 		return
 	}
 
@@ -47,7 +47,7 @@ func (cm *ClientManager) HandleMessage(data []byte, addr *net.UDPAddr, updateCou
 	cm.processClientInput(player, data)
 }
 
-func (cm *ClientManager) addClient(addr *net.UDPAddr) {
+func (cm *ClientManager) addClient(addr *net.UDPAddr, updateCount int64) {
 	player := &entities.Player{
 		Velocity: rl.Vector3{},
 		Collider: colliders.NewCylinderCollider(
@@ -55,9 +55,11 @@ func (cm *ClientManager) addClient(addr *net.UDPAddr) {
 			config.PlayerRadius,
 			config.PlayerHeight,
 		),
-		Speed:   config.PlayerSpeed,
-		Address: addr,
-		Id:      cm.nextPlayerId,
+		Speed:       config.PlayerSpeed,
+		Address:     addr,
+		Id:          cm.nextPlayerId,
+		LastMessage: updateCount,
+		Hp:          100,
 	}
 
 	cm.clients[addr.String()] = player

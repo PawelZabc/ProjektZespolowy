@@ -83,7 +83,8 @@ func (n *Network) BroadcastGameState() {
 		serverData := protocol.ServerData{
 			Position: player.GetPosition(),
 			Players:  playerData,
-			Enemy:    protocol.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX},
+			Enemy:    protocol.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX, AnimationFrame: uint8(enemy.State)},
+			PlayerHp: player.Hp,
 		}
 
 		data := protocol.SerializeServerData(serverData)
