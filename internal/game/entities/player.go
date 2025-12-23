@@ -19,6 +19,7 @@ type Player struct {
 	Speed       float32
 	LastMessage int64
 	Id          uint16
+	Hp          uint8
 }
 
 func (p *Player) Move() {
@@ -47,5 +48,13 @@ func (p *Player) PushbackFrom(collider colliders.Collider) {
 		case physics.DirY:
 			p.Velocity.Y = 0
 		}
+	}
+}
+
+func (p *Player) Hit(damage uint8) {
+	if p.Hp <= damage {
+		p.Hp = 0
+	} else {
+		p.Hp -= damage
 	}
 }
