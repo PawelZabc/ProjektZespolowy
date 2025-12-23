@@ -12,6 +12,14 @@ type CylinderCollider struct {
 	Height   float32
 }
 
+func NewCylinderCollider(position rl.Vector3, radius float32, height float32) *CylinderCollider {
+	return &CylinderCollider{
+		Position: position,
+		Radius:   radius,
+		Height:   height,
+	}
+}
+
 func (c CylinderCollider) GetSides(position rl.Vector2) (rl.Vector2, rl.Vector2) {
 	cylinderPosition := physics.GetVector2XZ(c.Position)
 	difference := rl.Vector2Subtract(cylinderPosition, position)
@@ -174,12 +182,16 @@ func (c *CylinderCollider) PushbackFromCylinder(cylinder *CylinderCollider) phys
 
 }
 
-func NewCylinderCollider(position rl.Vector3, radius float32, height float32) *CylinderCollider {
-	return &CylinderCollider{
-		Position: position,
-		Radius:   radius,
-		Height:   height,
+func (c CylinderCollider) GetSizeOnAxis(axis physics.Direction) float32 {
+	switch axis {
+	case physics.DirX:
+		return c.Radius
+	case physics.DirY:
+		return c.Height
+	case physics.DirZ:
+		return c.Radius
 	}
+	return 0
 }
 
 var _ Collider = (*CylinderCollider)(nil)

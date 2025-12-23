@@ -11,4 +11,5 @@ type Collider interface {
 	SetPosition(rl.Vector3)
 	AddPosition(rl.Vector3)
 	PushbackFrom(Collider) physics.Direction
+	GetSizeOnAxis(physics.Direction) float32
 }

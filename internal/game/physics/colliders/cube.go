@@ -14,6 +14,15 @@ type CubeCollider struct {
 	SizeZ    float32
 }
 
+func NewCubeCollider(position rl.Vector3, sizeX float32, sizeY float32, sizeZ float32) *CubeCollider {
+	return &CubeCollider{
+		Position: position,
+		SizeX:    sizeX,
+		SizeY:    sizeY,
+		SizeZ:    sizeZ,
+	}
+}
+
 func (c CubeCollider) CollidesWith(c2 Collider) bool {
 	if cylinder, ok := c2.(*CylinderCollider); ok {
 		if rl.Vector2Distance(rl.Vector2{X: math.Min(c.Position.X+c.SizeX, math.Max(c.Position.X, cylinder.Position.X)),
@@ -143,11 +152,14 @@ func (c *CubeCollider) PushbackFromCylinder(cylinder *CylinderCollider) physics.
 
 }
 
-func NewCubeCollider(position rl.Vector3, sizeX float32, sizeY float32, sizeZ float32) *CubeCollider {
-	return &CubeCollider{
-		Position: position,
-		SizeX:    sizeX,
-		SizeY:    sizeY,
-		SizeZ:    sizeZ,
+func (c CubeCollider) GetSizeOnAxis(axis physics.Direction) float32 {
+	switch axis {
+	case physics.DirX:
+		return c.SizeX
+	case physics.DirY:
+		return c.SizeY
+	case physics.DirZ:
+		return c.SizeZ
 	}
+	return 0
 }
