@@ -15,9 +15,11 @@ import (
 )
 
 type GameState struct {
-	player  *entities.Object           // local player
-	players map[uint16]*entities.Actor // other players
-	enemy   *entities.Actor            // for now only one
+	player       *entities.Object // local player
+	playerAvatar *assets.Resource[rl.Texture2D]
+	playerHp     int
+	players      map[uint16]*entities.Actor // other players
+	enemy        *entities.Actor            // for now only one
 
 	rooms       []levels.ClientRoom
 	currentRoom int
@@ -33,6 +35,11 @@ func NewGameState() *GameState {
 	player := &entities.Object{
 		Colliders: []colliders.Collider{playerCollider},
 		Model:     levels.NewModelFromCollider(playerCollider),
+	}
+
+	playerAvatar, err := assets.GlobalManager.LoadTexture(assets.TexturePlayer)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 	enemy := entities.NewActor(
@@ -68,13 +75,15 @@ func NewGameState() *GameState {
 	fmt.Println("Player model loaded", playerModel)
 
 	return &GameState{
-		player:      player,
-		players:     make(map[uint16]*entities.Actor),
-		enemy:       enemy,
-		rooms:       rooms,
-		shader:      shader,
-		lights:      lights,
-		currentRoom: 0,
+		player:       player,
+		playerHp:     50,
+		playerAvatar: playerAvatar,
+		players:      make(map[uint16]*entities.Actor),
+		enemy:        enemy,
+		rooms:        rooms,
+		shader:       shader,
+		lights:       lights,
+		currentRoom:  0,
 	}
 }
 
