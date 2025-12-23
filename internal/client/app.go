@@ -88,6 +88,7 @@ func (a *App) update() {
 	a.camera.Update(centerX, centerY, a.input.IsMouseLocked())
 	a.camera.UpdatePosition(a.gameState.GetPlayerPosition())
 
+	// ASK (to Dori): What the code doing?
 	camera := a.camera.GetCamera()
 	shader := a.gameState.GetShader()
 	cameraPos := []float32{
@@ -117,7 +118,7 @@ func (a *App) render() {
 	a.renderer.RenderWorld(a.gameState)
 	rl.EndMode3D()
 
-	a.renderer.RenderUI()
+	a.renderer.RenderUI(a.gameState)
 
 	rl.EndDrawing()
 }
