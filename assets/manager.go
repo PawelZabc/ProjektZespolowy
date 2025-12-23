@@ -2,7 +2,6 @@ package assets
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -41,7 +40,6 @@ func (c *ResourceCache[T]) Load(key string) (*Resource[T], error) {
 	defer c.mu.Unlock()
 
 	val, err := c.loader.Load(key)
-	log.Println("Here in Generic Load")
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +130,7 @@ func NewAssetManager() *AssetManager {
 
 	am.textures = NewResourceCache(ResourceLoader[rl.Texture2D]{
 		Load: func(key string) (rl.Texture2D, error) {
-			path := filepath.Join(assetsBasePath, "graphics", key)
+			path := filepath.Join(assetsBasePath, "textures", key)
 			tex := rl.LoadTexture(path)
 			if tex.ID == 0 {
 				return rl.Texture2D{}, fmt.Errorf("failed to load texture: %s", key)
@@ -144,7 +142,7 @@ func NewAssetManager() *AssetManager {
 
 	am.images = NewResourceCache(ResourceLoader[rl.Image]{
 		Load: func(key string) (rl.Image, error) {
-			path := filepath.Join(assetsBasePath, "graphics", key)
+			path := filepath.Join(assetsBasePath, "images", key)
 			img := rl.LoadImage(path)
 			if img.Data == nil {
 				return rl.Image{}, fmt.Errorf("failed to load image: %s", key)
