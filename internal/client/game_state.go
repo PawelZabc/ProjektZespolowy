@@ -64,7 +64,7 @@ func NewGameState() *GameState {
 	ambientLoc := rl.GetShaderLocation(shader, "ambient")
 	ambient := []float32{0.1, 0.1, 0.1, 1.0}
 	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
-	
+
 	// TODO: figure out what to do with that
 	levels.SetShaderForAllMaterials(&enemy.Model, shader)
 
@@ -113,7 +113,7 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 		if actor, exists := gs.players[playerData.Id]; exists {
 			// update existing
 			actor.Object.Colliders[0].SetPosition(playerData.Position)
-			actor.Rotation = (playerData.Rotation * rl.Rad2deg)
+			actor.Rotation = -(playerData.Rotation*rl.Rad2deg + 180)
 		} else {
 			// new player
 			gs.createPlayer(playerData.Id, playerData.Position, playerData.Rotation)
