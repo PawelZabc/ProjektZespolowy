@@ -4,5 +4,6 @@ bin/
 env*
 !env.example
 
-*assets_gen.go
+.golangci.yml
 
+*assets_gen.go

@@ -1,0 +1,197 @@
+package colliders
+
+import (
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
+	"github.com/chewxy/math32"
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
+
+type CylinderCollider struct {
+	Position rl.Vector3
+	Radius   float32
+	Height   float32
+}
+
+func NewCylinderCollider(position rl.Vector3, radius float32, height float32) *CylinderCollider {
+	return &CylinderCollider{
+		Position: position,
+		Radius:   radius,
+		Height:   height,
+	}
+}
+
+func (c CylinderCollider) GetSides(position rl.Vector2) (rl.Vector2, rl.Vector2) {
+	cylinderPosition := physics.GetVector2XZ(c.Position)
+	difference := rl.Vector2Subtract(cylinderPosition, position)
+	normalised := rl.Vector2Normalize(difference)
+	return rl.Vector2Scale(rl.NewVector2(-normalised.Y, normalised.X), c.Radius), rl.Vector2Scale(rl.NewVector2(normalised.Y, -normalised.X), c.Radius)
+}
+
+func (c CylinderCollider) CollidesWith(c2 Collider) bool {
+	if cylinder, ok := c2.(*CylinderCollider); ok {
+		if rl.Vector2Distance(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
+			rl.Vector2{X: cylinder.Position.X, Y: cylinder.Position.Z}) < (c.Radius+cylinder.Radius) &&
+			c.Position.Y <= cylinder.Position.Y+cylinder.Height && c.Position.Y+c.Height >= cylinder.Position.Y {
+			return true
+		}
+
+	} else if cube, ok := c2.(*CubeCollider); ok {
+		if rl.Vector2Distance(rl.Vector2{X: math32.Min(cube.Position.X+cube.SizeX, math32.Max(cube.Position.X, c.Position.X)),
+			Y: math32.Min(cube.Position.Z+cube.SizeZ, math32.Max(cube.Position.Z, c.Position.Z))},
+			rl.Vector2{X: c.Position.X, Y: c.Position.Z}) <= c.Radius &&
+			cube.Position.Y <= c.Position.Y+c.Height && cube.Position.Y+cube.SizeY >= c.Position.Y {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c CylinderCollider) GetPosition() rl.Vector3 {
+	return c.Position
+}
+
+func (c *CylinderCollider) SetPosition(vec rl.Vector3) {
+	c.Position = vec
+}
+
+func (c *CylinderCollider) AddPosition(vec rl.Vector3) {
+	c.Position = rl.Vector3Add(c.Position, vec)
+}
+
+func (c *CylinderCollider) PushbackFrom(c2 Collider) physics.Direction {
+	if cylinder, ok := c2.(*CylinderCollider); ok {
+		return c.PushbackFromCylinder(cylinder)
+	} else if cube, ok := c2.(*CubeCollider); ok {
+		return c.PushbackFromCube(cube)
+	} else if plane, ok := c2.(*PlaneCollider); ok {
+		return c.PushbackFromPlane(plane)
+	}
+
+	return physics.DirNone
+
+}
+
+func (c *CylinderCollider) PushbackFromCube(cube *CubeCollider) physics.Direction {
+	diffrence := rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
+		rl.Vector2{X: math32.Min(cube.Position.X+cube.SizeX, math32.Max(cube.Position.X, c.Position.X)),
+			Y: math32.Min(cube.Position.Z+cube.SizeZ, math32.Max(cube.Position.Z, c.Position.Z))})
+	distanceXZ := rl.Vector2Length(diffrence) - (c.Radius)
+	distanceY1 := c.Position.Y - (cube.Position.Y + cube.SizeY)
+	distanceY2 := cube.Position.Y - (c.Position.Y + c.Height)
+
+	if distanceXZ <= 0 && distanceY1 <= 0 && distanceY2 <= 0 {
+		if distanceXZ > distanceY1 && distanceXZ > distanceY2 {
+			forceXZ := rl.Vector2Scale(rl.Vector2Normalize(diffrence), -distanceXZ)
+			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(forceXZ.X, 0, forceXZ.Y))
+			return physics.DirXZ
+
+		} else if distanceY1 > distanceY2 {
+			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
+			return -physics.DirY
+		} else {
+			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
+			return physics.DirY
+		}
+	} else {
+		return physics.DirNone
+	}
+
+}
+
+func (c *CylinderCollider) PushbackFromPlane(plane *PlaneCollider) physics.Direction {
+
+	switch plane.Direction {
+	case physics.DirX, physics.DirXminus, physics.DirZ, physics.DirZminus:
+		{
+			var diffrence rl.Vector2
+			if plane.Direction == physics.DirZ || plane.Direction == physics.DirZminus {
+				diffrence = rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
+					rl.Vector2{X: math32.Min(plane.Position.X+plane.Width, math32.Max(plane.Position.X, c.Position.X)),
+						Y: plane.Position.Z,
+					})
+			} else {
+				diffrence = rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
+					rl.Vector2{X: plane.Position.X,
+						Y: math32.Min(plane.Position.Z+plane.Width, math32.Max(plane.Position.Z, c.Position.Z)),
+					})
+			}
+			distanceXZ := rl.Vector2Length(diffrence) - (c.Radius)
+			distanceY1 := c.Position.Y - (plane.Position.Y + plane.Height)
+			distanceY2 := plane.Position.Y - (c.Position.Y + c.Height)
+
+			if distanceXZ <= 0 && distanceY1 <= 0 && distanceY2 <= 0 {
+
+				forceXZ := rl.Vector2Scale(rl.Vector2Normalize(diffrence), -distanceXZ)
+				c.Position = rl.Vector3Add(c.Position, rl.NewVector3(forceXZ.X, 0, forceXZ.Y))
+				return -plane.Direction
+			}
+		}
+	case physics.DirY, physics.DirYminus:
+		{
+			diffrence := rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
+				rl.Vector2{X: math32.Min(plane.Position.X+plane.Width, math32.Max(plane.Position.X, c.Position.X)),
+					Y: math32.Min(plane.Position.Z+plane.Height, math32.Max(plane.Position.Z, c.Position.Z))})
+			distanceXZ := rl.Vector2Length(diffrence) - (c.Radius)
+			distanceY1 := c.Position.Y - plane.Position.Y
+			distanceY2 := plane.Position.Y - (c.Position.Y + c.Height)
+			if distanceXZ <= 0 && distanceY1 <= 0 && distanceY2 <= 0 {
+				if plane.Direction == -physics.DirY {
+					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
+					return physics.DirY
+				} else {
+					c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
+					return -physics.DirY
+				}
+			}
+
+		}
+		// default:
+		// 	{
+		// 		return physics.DirNone
+		// 	}
+	}
+	return physics.DirNone
+
+}
+
+func (c *CylinderCollider) PushbackFromCylinder(cylinder *CylinderCollider) physics.Direction {
+	diffrence := rl.Vector2Subtract(rl.Vector2{X: c.Position.X, Y: c.Position.Z},
+		rl.Vector2{X: cylinder.Position.X, Y: cylinder.Position.Z})
+	distanceXZ := rl.Vector2Length(diffrence) - (c.Radius + cylinder.Radius)
+	distanceY1 := c.Position.Y - (cylinder.Position.Y + cylinder.Height)
+	distanceY2 := cylinder.Position.Y - (c.Position.Y + c.Height)
+
+	if distanceXZ <= 0 && distanceY1 <= 0 && distanceY2 <= 0 {
+		if distanceXZ > distanceY1 && distanceXZ > distanceY2 {
+			forceXZ := rl.Vector2Scale(rl.Vector2Normalize(diffrence), -distanceXZ)
+			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(forceXZ.X, 0, forceXZ.Y))
+			return physics.DirXZ
+
+		} else if distanceY1 > distanceY2 {
+			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, -distanceY1, 0))
+			return -physics.DirY
+		} else {
+			c.Position = rl.Vector3Add(c.Position, rl.NewVector3(0, distanceY2, 0))
+			return physics.DirY
+		}
+
+	} else {
+		return physics.DirNone
+	}
+
+}
+
+func (c CylinderCollider) GetSizeOnAxis(axis physics.Direction) float32 {
+	switch axis {
+	case physics.DirX:
+		return c.Radius
+	case physics.DirY:
+		return c.Height
+	case physics.DirZ:
+		return c.Radius
+	}
+	return 0
+}
+
+var _ Collider = (*CylinderCollider)(nil)
