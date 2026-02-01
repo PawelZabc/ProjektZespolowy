@@ -24,11 +24,10 @@ endif
 
 .PHONY: all run build clean run-client run-server build-client build-server
 
-# Default target
 all: run
 
 # Run targets
-run: run-client
+run: gen run-client
 
 c: run-client
 s: run-server
@@ -56,11 +55,10 @@ run-both:
 	@echo "Running both client and server..."
 	@$(MAKE) run-server & $(MAKE) run-client
 
-run-generate:
+gen:
 	@echo "Generating asset names in ./client/assets"
 	cd $(CLIENT_PATH) && $(GO) generate
 
-# Build targets
 build: clean build-client build-server
 
 build-client:
