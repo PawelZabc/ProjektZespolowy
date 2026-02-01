@@ -3,8 +3,11 @@ package entities
 import (
 	"net"
 
+	"github.com/PawelZabc/ProjektZespolowy/internal/config"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/input"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
+	"github.com/PawelZabc/ProjektZespolowy/internal/protocol"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -47,6 +50,33 @@ func (p *Player) PushbackFrom(collider colliders.Collider) {
 			p.Velocity.Y = 0
 		case physics.DirY:
 			p.Velocity.Y = 0
+		}
+	}
+}
+
+// Changes player position based on data received from client
+// LIVES IN GOROUTINE
+func (p *Player) ProcessInput(data protocol.ClientData) {
+
+	p.RotationX = data.RotationX
+	p.RotationY = data.RotationY
+
+	p.Movement = rl.Vector2{}
+
+	for _, i := range data.Inputs {
+		switch i {
+		case input.MoveForward:
+			p.Movement.Y = 1
+		case input.MoveBackward:
+			p.Movement.Y = -1
+		case input.MoveLeft:
+			p.Movement.X = 1
+		case input.MoveRight:
+			p.Movement.X = -1
+		case input.Jump:
+			if p.IsOnFloor {
+				p.Velocity.Y = config.JumpStrength
+			}
 		}
 	}
 }
