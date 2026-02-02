@@ -30,7 +30,7 @@ func (p *Player) Move() {
 	p.Movement = rl.Vector2Rotate(p.Movement, rl.Deg2rad*90+p.RotationX)
 	p.Movement = rl.Vector2Scale(p.Movement, p.Speed)
 	p.Collider.AddPosition(rl.Vector3Add(p.Velocity, physics.GetVector3FromXZ(p.Movement)))
-	p.Movement = rl.Vector2{}
+	p.Movement = rl.Vector2{} //TODO: change movement resseting every tick
 }
 
 func (p *Player) GetPosition() rl.Vector3 {
