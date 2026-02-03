@@ -1,10 +1,6 @@
-package client
+package core
 
 import rl "github.com/gen2brain/raylib-go/raylib"
-
-// func (r Renderable) Draw(position rl.Vector3) {
-// 	rl.DrawModelEx(r.Model, position, rl.NewVector3(0, 1, 0), r.Rotation, rl.Vector3One(), r.Color)
-// }
 
 type Renderable interface {
 	GetModel() rl.Model
@@ -19,7 +15,3 @@ type Renderable interface {
 	SetRotation(rotation float32)
 	Render(position rl.Vector3)
 }
-
-// func (r Renderable) Draw(position rl.Vector3) {
-// 	rl.DrawModelEx(r.Model, position, rl.NewVector3(0, 1, 0), r.Rotation, rl.Vector3One(), r.Color)
-// }

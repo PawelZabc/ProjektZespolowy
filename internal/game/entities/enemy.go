@@ -3,7 +3,7 @@ package entities
 import (
 	"log"
 
-	sentity "github.com/PawelZabc/ProjektZespolowy/internal/game/entities/sentity"
+	server "github.com/PawelZabc/ProjektZespolowy/internal/game/entities/server"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/state"
@@ -16,12 +16,12 @@ type Enemy struct {
 	Collider       colliders.Collider
 	Target         *rl.Vector2
 	Speed          float32
-	State          state.EnemyState
+	State          state.State
 	AttackTimer    uint8
 	AttackCooldown uint8
 }
 
-func (e *Enemy) Attack(players []*Player, colliders []*sentity.CollisionObject) {
+func (e *Enemy) Attack(players []*Player, colliders []*server.CollisionObject) {
 	for _, player := range players {
 		if e.GetDistanceToCollider(player.Collider) < 15 {
 			ray := e.GetRayFromTopToColliderTop(player.Collider)
@@ -46,7 +46,7 @@ func (e *Enemy) Attack(players []*Player, colliders []*sentity.CollisionObject) 
 	e.AttackCooldown = 20
 }
 
-func (e *Enemy) Update(players []*Player, objects []*sentity.CollisionObject) {
+func (e *Enemy) Update(players []*Player, objects []*server.CollisionObject) {
 	if e.AttackCooldown > 0 {
 		e.AttackCooldown -= 1
 	}
@@ -63,7 +63,7 @@ func (e *Enemy) Update(players []*Player, objects []*sentity.CollisionObject) {
 	}
 }
 
-func (e *Enemy) SetState(s state.EnemyState) {
+func (e *Enemy) SetState(s state.State) {
 	if s != e.State {
 		if s == state.Attacking {
 			if e.AttackCooldown == 0 {
@@ -98,7 +98,7 @@ func (e *Enemy) Move() {
 
 }
 
-func (e *Enemy) UpdateTarget(players []*Player, cols []*sentity.CollisionObject) {
+func (e *Enemy) UpdateTarget(players []*Player, cols []*server.CollisionObject) {
 	minLength := float32(0)
 	minId := -1
 	for i, player := range players {

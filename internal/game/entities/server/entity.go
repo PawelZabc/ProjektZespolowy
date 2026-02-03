@@ -1,4 +1,4 @@
-package sentity
+package server
 
 import (
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"

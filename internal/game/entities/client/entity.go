@@ -1,12 +1,13 @@
 package client
 
 import (
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/core"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type CEntity struct {
-	Renderable Renderable
+	Renderable core.Renderable
 	Position   rl.Vector3
 	Collider   *colliders.Collider
 	// IsInteractable bool
