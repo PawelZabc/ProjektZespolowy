@@ -41,6 +41,18 @@ func NewGameState() *GameState {
 	// enemies := make(*entities.Enemy,0,4)
 	// enemies = append(enemies,enemy)
 
+	effect := func(playerId uint16) {
+		println(playerId, " touched me")
+	}
+
+	effectObject := server.EffectObject{
+		Effect:   &effect,
+		Collider: colliders.NewCubeCollider(rl.NewVector3(0, 0, 0), 2, 2, 2),
+	}
+
+	effectObjects := make([]*server.EffectObject, 0, 10)
+	effectObjects = append(effectObjects, &effectObject)
+
 	rooms := levels.ServerLoadRooms()
 	objects := make([]*server.CollisionObject, 0, len(rooms[0].Colliders))
 	for _, collider := range rooms[0].Colliders {
@@ -51,9 +63,10 @@ func NewGameState() *GameState {
 	return &GameState{
 		enemy: enemy,
 		// rooms:        rooms,
-		objects:      objects,
-		clients:      make(Clients, 2),
-		nextPlayerId: 0,
+		objects:       objects,
+		effectObjects: effectObjects,
+		clients:       make(Clients, 2),
+		nextPlayerId:  0,
 	}
 }
 
