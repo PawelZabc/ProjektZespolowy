@@ -6,9 +6,7 @@ import (
 	"time"
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
-	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
-	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/state"
 )
 
@@ -45,9 +43,9 @@ func (a *App) updateLoop() {
 		a.network.SetUpdateCount(updateCount)
 
 		// Update game entities
-		players := a.gameState.GetClientsAsPlayerSlice()
-		a.updatePlayers(players, a.gameState.objects, a.gameState.enemy)
-		a.updateEnemy(players, a.gameState.objects, a.gameState.enemy)
+		// players := a.gameState.GetClientsAsPlayerSlice()
+		a.updatePlayers()
+		a.updateEnemy()
 
 		a.network.RemoveDisconnectedClients(updateCount)
 
@@ -60,30 +58,33 @@ func (a *App) updateLoop() {
 }
 
 // Helper for updating Players. Handles physics (gravity, colliders) for players
-func (a *App) updatePlayers(players Players, objects []colliders.Collider, enemy *entities.Enemy) {
+func (a *App) updatePlayers() {
+	players := a.gameState.GetClientsAsPlayerSlice()
 	for _, player := range players {
 		player.Velocity.Y -= config.Gravity
 
 		player.Move()
 		player.IsOnFloor = false
 
-		for _, obj := range objects {
-			player.PushbackFrom(obj)
+		for _, obj := range a.gameState.objects {
+			player.PushbackFrom(*obj.Collider)
 		}
 
-		player.PushbackFrom(enemy.Collider)
+		player.PushbackFrom(a.gameState.enemy.Collider)
 	}
 }
 
 // Helper for updating enemy.
 // TODO: Change when there is more enemies
-func (a *App) updateEnemy(players Players, objects []colliders.Collider, enemy *entities.Enemy) {
-	enemy.Update(players, &objects)
+func (a *App) updateEnemy() {
+	players := a.gameState.GetClientsAsPlayerSlice()
+	enemy := a.gameState.enemy
+	enemy.Update(players, a.gameState.objects)
 
-	for _, obj := range objects {
-		if obj != nil {
-			enemy.Collider.PushbackFrom(obj)
-		}
+	for _, obj := range a.gameState.objects {
+		// if obj != nil {
+		enemy.Collider.PushbackFrom(*obj.Collider)
+		// }
 	}
 
 	for _, player := range players {

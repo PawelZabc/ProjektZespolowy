@@ -76,7 +76,7 @@ func (n *Network) BroadcastGameState() {
 
 	for _, player := range clients {
 		playerData := make([]protocol.PlayerData, 0, len(clients)-1)
-		
+
 		// Sending your player data to OTHER players, not to yourself
 		for _, otherPlayer := range clients {
 			if otherPlayer.Address.String() != player.Address.String() {

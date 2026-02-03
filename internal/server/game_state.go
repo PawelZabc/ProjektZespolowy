@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	sentity "github.com/PawelZabc/ProjektZespolowy/internal/game/entities/sentity"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -16,9 +17,10 @@ type Players []*entities.Player          // slice of PlayerPointers
 
 // GameState holds all server-side game state
 type GameState struct {
-	enemy   *entities.Enemy
-	rooms   []levels.Room
-	objects []colliders.Collider
+	enemy *entities.Enemy
+	// rooms   []levels.Room
+	objects       []*sentity.CollisionObject
+	effectObjects []*sentity.EffectObject
 
 	// Players as clients
 	clients      Clients
@@ -36,14 +38,21 @@ func NewGameState() *GameState {
 		Speed: 0.05,
 	}
 
+	// enemies := make(*entities.Enemy,0,4)
+	// enemies = append(enemies,enemy)
+
 	rooms := levels.ServerLoadRooms()
-	objects := rooms[0].Colliders
+	objects := make([]*sentity.CollisionObject, 0, len(rooms[0].Colliders))
+	for _, collider := range rooms[0].Colliders {
+		object := sentity.CollisionObject{Collider: &collider}
+		objects = append(objects, &object)
+	}
 
 	return &GameState{
-		enemy:   enemy,
-		rooms:   rooms,
-		objects: objects,
-		clients: make(Clients, 2),
+		enemy: enemy,
+		// rooms:        rooms,
+		objects:      objects,
+		clients:      make(Clients, 2),
 		nextPlayerId: 0,
 	}
 }

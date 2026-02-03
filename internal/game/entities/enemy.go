@@ -3,6 +3,7 @@ package entities
 import (
 	"log"
 
+	sentity "github.com/PawelZabc/ProjektZespolowy/internal/game/entities/sentity"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/state"
@@ -20,15 +21,15 @@ type Enemy struct {
 	AttackCooldown uint8
 }
 
-func (e *Enemy) Attack(players []*Player, colliders *[]colliders.Collider) {
+func (e *Enemy) Attack(players []*Player, colliders []*sentity.CollisionObject) {
 	for _, player := range players {
 		if e.GetDistanceToCollider(player.Collider) < 15 {
 			ray := e.GetRayFromTopToColliderTop(player.Collider)
 			point, length := ray.GetCollisionPoint(player.Collider)
 			if point != nil && length < 10 {
 				direct := true // ASK (to Pabox): Is this flag needed?
-				for _, collider := range *colliders {
-					point2, length2 := ray.GetCollisionPoint(collider)
+				for _, collider := range colliders {
+					point2, length2 := ray.GetCollisionPoint(*collider.Collider)
 					if point2 != nil && length2 < length {
 						direct = false
 						break
@@ -45,18 +46,18 @@ func (e *Enemy) Attack(players []*Player, colliders *[]colliders.Collider) {
 	e.AttackCooldown = 20
 }
 
-func (e *Enemy) Update(players []*Player, colliders *[]colliders.Collider) {
+func (e *Enemy) Update(players []*Player, objects []*sentity.CollisionObject) {
 	if e.AttackCooldown > 0 {
 		e.AttackCooldown -= 1
 	}
 	switch e.State {
 	case state.Walking:
-		e.UpdateTarget(players, colliders)
+		e.UpdateTarget(players, objects)
 		e.Move()
 	case state.Attacking:
 		e.AttackTimer -= 1
 		if e.AttackTimer <= 0 {
-			e.Attack(players, colliders)
+			e.Attack(players, objects)
 			e.State = state.Walking
 		}
 	}
@@ -97,7 +98,7 @@ func (e *Enemy) Move() {
 
 }
 
-func (e *Enemy) UpdateTarget(players []*Player, cols *[]colliders.Collider) {
+func (e *Enemy) UpdateTarget(players []*Player, cols []*sentity.CollisionObject) {
 	minLength := float32(0)
 	minId := -1
 	for i, player := range players {
@@ -109,8 +110,8 @@ func (e *Enemy) UpdateTarget(players []*Player, cols *[]colliders.Collider) {
 		if point != nil && length < 15 && (math32.Abs(difference) < 45 || math32.Abs(difference) > 315) {
 			minId2 := -1
 			minLength2 := float32(0)
-			for i, collider := range *cols {
-				point2, length2 := ray.GetCollisionPoint(collider)
+			for i, collider := range cols {
+				point2, length2 := ray.GetCollisionPoint(*collider.Collider)
 				if point2 != nil && length2 < length && (minId2 == -1 || minLength2 > length2) {
 					minId2 = i
 					minLength2 = length2

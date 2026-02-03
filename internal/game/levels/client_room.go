@@ -12,6 +12,17 @@ type ClientRoom struct {
 	VisibleRooms  []*ClientRoom      //rooms visible that need to be rendered while in the room
 }
 
+// type ClientRoom struct {
+// 	Walls         []colliders.Collider
+// 	Model         entities.Model
+// 	Position      rl.Vector3
+// 	Items         []*entities.Entity
+// 	Interactables []*entities.Entity
+// 	Doors         []*entities.Actor
+// 	Objects       []*entities.Entity //objects in that room
+// 	VisibleRooms  []*ClientRoom      //rooms visible that need to be rendered while in the room
+// }
+
 // shared struct - JSON TODO
 type RoomTWO struct {
 	Objects       []*ObjectTWO //objects and walls in that room
