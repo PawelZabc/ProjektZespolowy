@@ -3,7 +3,7 @@ package entities
 import (
 	"log"
 
-	server "github.com/PawelZabc/ProjektZespolowy/internal/game/entities/server"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/server"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/state"
