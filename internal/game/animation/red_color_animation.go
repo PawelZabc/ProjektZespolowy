@@ -1,8 +1,6 @@
 package animation
 
 import (
-	"log"
-
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/core"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -21,7 +19,6 @@ func NewRedColorAnimation() *RedColorAnimation {
 
 func (r *RedColorAnimation) Apply(renderable core.Renderable) {
 	notRed := min((8 * r.frame), 255)
-	log.Print(notRed)
 	renderable.SetColor(rl.NewColor(255, uint8(notRed), uint8(notRed), 255))
 }
 
