@@ -73,8 +73,8 @@ func (a *App) updatePlayers() {
 		for _, obj := range a.gameState.effectObjects {
 			// player.PushbackFrom(obj.Collider)
 
-			if player.Collider.CollidesWith(obj.Collider) {
-				(*obj.Effect)(player.Id)
+			if obj.Active && player.Collider.CollidesWith(obj.Collider) {
+				(*obj.Effect)(player.Address.String())
 			}
 		}
 
