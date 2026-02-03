@@ -9,6 +9,7 @@ type AnimationHandler struct {
 }
 
 func (a *AnimationHandler) SetAnimation(animation Animation) {
+	animation.Reset()
 	a.current = animation
 }
 

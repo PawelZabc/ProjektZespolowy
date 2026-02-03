@@ -31,4 +31,8 @@ func (a *GLBAnimation) Finished() bool {
 	return a.frame >= int(a.frameCount)
 }
 
+func (a *GLBAnimation) Reset() {
+	a.frame = 0
+}
+
 var _ Animation = (*GLBAnimation)(nil)
