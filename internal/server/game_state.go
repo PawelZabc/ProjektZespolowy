@@ -1,19 +1,31 @@
 package server
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+// Usefull type aliases
+type Clients map[string]*entities.Player // map IP:PlayerPointer
+type Players []*entities.Player          // slice of PlayerPointers
+
 // GameState holds all server-side game state
 type GameState struct {
 	enemy   *entities.Enemy
 	rooms   []levels.Room
 	objects []colliders.Collider
+
+	// Players as clients
+	clients      Clients
+	nextPlayerId uint16
 }
 
+// Returns new GameState, used for initialisation of game
 func NewGameState() *GameState {
 	enemy := &entities.Enemy{
 		Collider: colliders.NewCylinderCollider(
@@ -31,13 +43,12 @@ func NewGameState() *GameState {
 		enemy:   enemy,
 		rooms:   rooms,
 		objects: objects,
+		clients: make(Clients, 2),
+		nextPlayerId: 0,
 	}
 }
 
-func (gs *GameState) GetEnemy() *entities.Enemy {
-	return gs.enemy
-}
-
-func (gs *GameState) GetObjects() []colliders.Collider {
-	return gs.objects
+// Converts Clients to players slice (for updating in certain places - enemy f.e)
+func (gs *GameState) GetClientsAsPlayerSlice() Players {
+	return slices.Collect(maps.Values(gs.clients))
 }
