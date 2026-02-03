@@ -88,7 +88,8 @@ func (a *App) update() {
 	a.camera.Update(centerX, centerY, a.input.IsMouseLocked())
 	a.camera.UpdatePosition(a.gameState.GetPlayerPosition())
 
-	// ASK (to Dori): What the code doing?
+	// Tell shader where the camera is located
+	// not used in current shader
 	camera := a.camera.GetCamera()
 	shader := a.gameState.GetShader()
 	cameraPos := []float32{
