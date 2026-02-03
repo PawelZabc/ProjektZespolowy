@@ -5,7 +5,7 @@ import (
 	"slices"
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
-	sentity "github.com/PawelZabc/ProjektZespolowy/internal/game/entities/sentity"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/server"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -19,8 +19,8 @@ type Players []*entities.Player          // slice of PlayerPointers
 type GameState struct {
 	enemy *entities.Enemy
 	// rooms   []levels.Room
-	objects       []*sentity.CollisionObject
-	effectObjects []*sentity.EffectObject
+	objects       []*server.CollisionObject
+	effectObjects []*server.EffectObject
 
 	// Players as clients
 	clients      Clients
@@ -42,9 +42,9 @@ func NewGameState() *GameState {
 	// enemies = append(enemies,enemy)
 
 	rooms := levels.ServerLoadRooms()
-	objects := make([]*sentity.CollisionObject, 0, len(rooms[0].Colliders))
+	objects := make([]*server.CollisionObject, 0, len(rooms[0].Colliders))
 	for _, collider := range rooms[0].Colliders {
-		object := sentity.CollisionObject{Collider: &collider}
+		object := server.CollisionObject{Collider: &collider}
 		objects = append(objects, &object)
 	}
 
