@@ -7,14 +7,18 @@ import (
 )
 
 type CEntity struct {
-	Renderable core.Renderable
-	Position   rl.Vector3
-	Collider   colliders.Collider
+	core.Renderable
+	Position rl.Vector3
+	Collider colliders.Collider
 	// IsInteractable bool
 }
 
 func (e CEntity) Render() {
 	e.Renderable.Render(e.Position)
+}
+
+func (e *CEntity) SetPosition(p rl.Vector3) {
+	e.Position = p
 }
 
 func RenderEntities(entities []*CEntity) {

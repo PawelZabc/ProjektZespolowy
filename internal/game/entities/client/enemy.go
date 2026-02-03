@@ -23,7 +23,7 @@ func NewEnemy(model rl.Model, shader rl.Shader) *Actor {
 	animationHandler := animation.AnimationHandler{}
 
 	return &Actor{
-		Entity:           entity,
+		CEntity:          entity,
 		AnimationHandler: animationHandler,
 		State:            state.Walking, // Initial state
 		animationBase:    animation.NewEnemyAnimationMap(),

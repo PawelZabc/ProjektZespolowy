@@ -86,7 +86,7 @@ func (a *App) update() {
 	centerX := a.config.WindowWidth / 2
 	centerY := a.config.WindowHeight / 2
 	a.camera.Update(centerX, centerY, a.input.IsMouseLocked())
-	a.camera.UpdatePosition(a.gameState.GetPlayerPosition())
+	a.camera.UpdatePosition(a.gameState.cameraPosition)
 
 	// ASK (to Dori): What the code doing?
 	camera := a.camera.GetCamera()

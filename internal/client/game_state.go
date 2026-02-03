@@ -7,7 +7,6 @@ import (
 
 	"github.com/PawelZabc/ProjektZespolowy/assets"
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
-	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/client"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
@@ -17,27 +16,22 @@ import (
 )
 
 type GameState struct {
-	player       *entities.Object // local player
-	playerAvatar *assets.Resource[rl.Texture2D]
-	playerHp     int
-	players      map[uint16]*entities.Actor // other players
-	enemy        *client.Actor              // for now only one
+	cameraPosition rl.Vector3
+	playerAvatar   *assets.Resource[rl.Texture2D]
+	playerHp       int
+	players        map[uint16]*client.Actor // other players
+	enemy          *client.Actor            // for now only one
 
 	rooms       []levels.ClientRoom
 	currentRoom int
 	shader      rl.Shader
-	lights      []entities.Light
+	lights      []client.Light
 
 	rayCollisionPoint *rl.Vector3
 	mu                sync.RWMutex
 }
 
 func NewGameState() *GameState {
-	playerCollider := colliders.NewCylinderCollider(config.PlayerSpawnpoint, config.PlayerRadius, config.PlayerHeight)
-	player := &entities.Object{
-		Colliders: []colliders.Collider{playerCollider},
-		Model:     levels.NewModelFromCollider(playerCollider),
-	}
 
 	playerAvatar, err := assets.GlobalManager.LoadTexture(assets.TexturePlayer)
 	if err != nil {
@@ -63,7 +57,7 @@ func NewGameState() *GameState {
 	ghostModel, _ := assets.GlobalManager.LoadModel(assets.ModelGhost)
 
 	enemy := client.NewEnemy(ghostModel.Data, shader)
-	enemyModel := enemy.Entity.Renderable.GetModel()
+	enemyModel := enemy.Renderable.GetModel()
 	// TODO: figure out what to do with that
 	levels.SetShaderForAllMaterials(&enemyModel, shader)
 
@@ -77,9 +71,8 @@ func NewGameState() *GameState {
 	fmt.Println("Player model loaded", playerModel)
 
 	return &GameState{
-		player:       player,
 		playerAvatar: playerAvatar,
-		players:      make(map[uint16]*entities.Actor),
+		players:      make(map[uint16]*client.Actor),
 		enemy:        enemy,
 		rooms:        rooms,
 		shader:       shader,
@@ -99,11 +92,11 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
 
-	gs.player.Colliders[0].SetPosition(data.Position)
+	gs.cameraPosition = data.Position
 	gs.playerHp = int(data.PlayerHp)
 
-	gs.enemy.Entity.Position = data.Enemy.Position
-	gs.enemy.Entity.Renderable.SetRotation(-data.Enemy.Rotation) // ASK (to Pabox): why minus tho?
+	gs.enemy.Position = data.Enemy.Position
+	gs.enemy.SetRotation(-data.Enemy.Rotation) // ASK (to Pabox): why minus tho?
 	gs.enemy.State = state.State(data.Enemy.AnimationFrame)
 
 	updatedPlayers := make(map[uint16]bool)
@@ -111,8 +104,8 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	for _, playerData := range data.Players {
 		if actor, exists := gs.players[playerData.Id]; exists {
 			// update existing
-			actor.Object.Colliders[0].SetPosition(playerData.Position)
-			actor.Rotation = -(playerData.Rotation*rl.Rad2deg + 180)
+			actor.SetPosition(playerData.Position)
+			actor.SetRotation(playerData.Rotation * rl.Rad2deg)
 		} else {
 			// new player
 			gs.createPlayer(playerData.Id, playerData.Position, playerData.Rotation)
@@ -132,11 +125,11 @@ func (gs *GameState) GetShader() rl.Shader {
 	return gs.shader
 }
 
-func createLights(shader rl.Shader) []entities.Light {
-	var lights []entities.Light
+func createLights(shader rl.Shader) []client.Light {
+	var lights []client.Light
 
-	light1 := entities.NewLight(
-		entities.LightTypePoint,
+	light1 := client.NewLight(
+		client.LightTypePoint,
 		rl.NewVector3(0, 2.9, 0), // light position
 		rl.NewVector3(0, 0, 0),   // target (unused for point light)
 		rl.White,                 // light color
@@ -144,8 +137,8 @@ func createLights(shader rl.Shader) []entities.Light {
 	)
 	light1.UpdateValues()
 
-	light2 := entities.NewLight(
-		entities.LightTypePoint,
+	light2 := client.NewLight(
+		client.LightTypePoint,
 		rl.NewVector3(5, 2.9, -5), // light position
 		rl.NewVector3(0, 0, 0),    // target (unused for point light)
 		rl.White,                  // light color
@@ -153,8 +146,8 @@ func createLights(shader rl.Shader) []entities.Light {
 	)
 	light2.UpdateValues()
 
-	light3 := entities.NewLight(
-		entities.LightTypePoint,
+	light3 := client.NewLight(
+		client.LightTypePoint,
 		rl.NewVector3(5, 2.9, 5), // light position
 		rl.NewVector3(0, 0, 0),   // target (unused for point light)
 		rl.White,                 // light color
@@ -171,19 +164,23 @@ func createLights(shader rl.Shader) []entities.Light {
 // Creates a new remote player
 func (gs *GameState) createPlayer(id uint16, position rl.Vector3, rotation float32) {
 	// maybe some logging could be usefull
-	cylinder := colliders.NewCylinderCollider(position, config.PlayerRadius, config.PlayerHeight)
-	gs.players[id] = entities.NewActor(
-		cylinder,
-		rl.Vector3{},
-		(rotation*rl.Rad2deg)+90,
-		assets.ModelPlayer,
-	)
-	levels.SetShaderForAllMaterials(&gs.players[id].Model, gs.shader)
-}
+	pCollider := colliders.NewCylinderCollider(position, config.PlayerRadius, config.PlayerHeight)
+	pModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
+	levels.SetShaderForAllMaterials(&pModel.Data, gs.shader)
 
-// Local player position
-func (gs *GameState) GetPlayerPosition() rl.Vector3 {
-	return gs.player.Colliders[0].GetPosition()
+	playerEntity := &client.CEntity{
+		Position: position,
+		Collider: pCollider,
+		Renderable: &client.BasicRenderable{
+			Model:    pModel.Data,
+			Shader:   gs.shader,
+			Color:    rl.White,
+			Offset:   rl.NewVector3(0, 0, 0),
+			Rotation: 0,
+		},
+	}
+
+	gs.players[id] = client.NewActor(*playerEntity)
 }
 
 func (gs *GameState) GetCurrentRoom() *levels.ClientRoom {
@@ -191,7 +188,7 @@ func (gs *GameState) GetCurrentRoom() *levels.ClientRoom {
 }
 
 // Getter for other players
-func (gs *GameState) GetPlayers() map[uint16]*entities.Actor {
+func (gs *GameState) GetPlayers() map[uint16]*client.Actor {
 	gs.mu.RLock()
 	defer gs.mu.RUnlock()
 	return gs.players

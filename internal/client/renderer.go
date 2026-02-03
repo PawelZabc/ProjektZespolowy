@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/client"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
@@ -24,7 +25,8 @@ func NewRenderer(debugMode bool) *Renderer {
 func (r *Renderer) RenderWorld(state *GameState) {
 	// rendering 3d world
 	levels.DrawRoom(state.GetCurrentRoom())
-	entities.DrawActorsMap(state.GetPlayers())
+	client.RenderActorsMap(state.GetPlayers())
+
 	state.GetEnemy().Render()
 	r.renderLights(state.lights)
 
@@ -118,7 +120,7 @@ func (r *Renderer) drawHPBar(
 	rl.DrawRectangle(x, y, fillWidth, height, fillColor)       // Fill
 }
 
-func (r Renderer) renderLights(lights []entities.Light) {
+func (r Renderer) renderLights(lights []client.Light) {
 	rl.DrawSphereEx(lights[0].Position, 0.2, 8, 8, rl.White)
 	rl.DrawSphereEx(lights[1].Position, 0.2, 8, 8, rl.White)
 	rl.DrawSphereEx(lights[2].Position, 0.2, 8, 8, rl.White)
@@ -130,7 +132,7 @@ func (r *Renderer) renderDebug(state *GameState) {
 
 	// rendering debug things from main.go
 	if len(room.Objects) > 1 && room.Objects[1] != nil {
-		r.renderCylinderSides(room.Objects[1], state.GetPlayerPosition())
+		r.renderCylinderSides(room.Objects[1], state.cameraPosition)
 	}
 
 	// this neat thing used as celownik
