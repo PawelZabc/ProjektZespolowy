@@ -9,7 +9,7 @@ import (
 type CEntity struct {
 	Renderable core.Renderable
 	Position   rl.Vector3
-	Collider   *colliders.Collider
+	Collider   colliders.Collider
 	// IsInteractable bool
 }
 
