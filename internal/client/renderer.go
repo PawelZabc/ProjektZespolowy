@@ -25,7 +25,7 @@ func (r *Renderer) RenderWorld(state *GameState) {
 	// rendering 3d world
 	levels.DrawRoom(state.GetCurrentRoom())
 	entities.DrawActorsMap(state.GetPlayers())
-	state.GetEnemy().Draw()
+	state.GetEnemy().Render()
 	r.renderLights(state.lights)
 
 	if r.debugMode {

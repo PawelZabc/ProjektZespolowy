@@ -1,8 +1,8 @@
 package state
 
-type EnemyState uint8
+type State uint8
 
 const (
-	Walking EnemyState = iota
+	Walking State = iota
 	Attacking
 )

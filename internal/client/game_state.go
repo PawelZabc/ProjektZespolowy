@@ -8,8 +8,10 @@ import (
 	"github.com/PawelZabc/ProjektZespolowy/assets"
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/client"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/state"
 	"github.com/PawelZabc/ProjektZespolowy/internal/protocol"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -19,7 +21,7 @@ type GameState struct {
 	playerAvatar *assets.Resource[rl.Texture2D]
 	playerHp     int
 	players      map[uint16]*entities.Actor // other players
-	enemy        *entities.Actor            // for now only one
+	enemy        *client.Actor              // for now only one
 
 	rooms       []levels.ClientRoom
 	currentRoom int
@@ -42,13 +44,6 @@ func NewGameState() *GameState {
 		log.Fatalln(err)
 	}
 
-	enemy := entities.NewActor(
-		colliders.NewCylinderCollider(rl.NewVector3(15, 0, 15), 1, 2),
-		rl.Vector3{},
-		-45,
-		assets.ModelGhost,
-	)
-
 	// TODO: Move this shady code to somewhere else
 	shaderPointer, err := assets.GlobalManager.LoadShader(assets.ShaderLightingV2VS, assets.ShaderLightingV2FS)
 
@@ -65,8 +60,12 @@ func NewGameState() *GameState {
 	ambient := []float32{0.1, 0.1, 0.1, 1.0}
 	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
 
+	ghostModel, _ := assets.GlobalManager.LoadModel(assets.ModelGhost)
+
+	enemy := client.NewEnemy(ghostModel.Data, shader)
+	enemyModel := enemy.Entity.Renderable.GetModel()
 	// TODO: figure out what to do with that
-	levels.SetShaderForAllMaterials(&enemy.Model, shader)
+	levels.SetShaderForAllMaterials(&enemyModel, shader)
 
 	rooms := levels.LoadRooms(shader)
 
@@ -103,9 +102,9 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	gs.player.Colliders[0].SetPosition(data.Position)
 	gs.playerHp = int(data.PlayerHp)
 
-	gs.enemy.SetPosition(data.Enemy.Position)
-	gs.enemy.Rotation = -data.Enemy.Rotation // ASK (to Pabox): why minus tho?
-	gs.enemy.SetAnimation(data.Enemy.AnimationFrame)
+	gs.enemy.Entity.Position = data.Enemy.Position
+	gs.enemy.Entity.Renderable.SetRotation(-data.Enemy.Rotation) // ASK (to Pabox): why minus tho?
+	gs.enemy.State = state.State(data.Enemy.AnimationFrame)
 
 	updatedPlayers := make(map[uint16]bool)
 
@@ -205,7 +204,7 @@ func (gs *GameState) GetPlayers() map[uint16]*entities.Actor {
 }
 
 // TODO: refactor it to get all enemies in the future
-func (gs *GameState) GetEnemy() *entities.Actor {
+func (gs *GameState) GetEnemy() *client.Actor {
 	return gs.enemy
 }
 

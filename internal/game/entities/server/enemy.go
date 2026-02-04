@@ -1,9 +1,8 @@
-package entities
+package server
 
 import (
 	"log"
 
-	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/server"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/state"
@@ -21,7 +20,7 @@ type Enemy struct {
 	AttackCooldown uint8
 }
 
-func (e *Enemy) Attack(players []*Player, colliders []*server.CollisionObject) {
+func (e *Enemy) Attack(players []*Player, colliders []*CollisionObject) {
 	for _, player := range players {
 		if e.GetDistanceToCollider(player.Collider) < 15 {
 			ray := e.GetRayFromTopToColliderTop(player.Collider)
@@ -46,7 +45,7 @@ func (e *Enemy) Attack(players []*Player, colliders []*server.CollisionObject) {
 	e.AttackCooldown = 20
 }
 
-func (e *Enemy) Update(players []*Player, objects []*server.CollisionObject) {
+func (e *Enemy) Update(players []*Player, objects []*CollisionObject) {
 	if e.AttackCooldown > 0 {
 		e.AttackCooldown -= 1
 	}
@@ -98,7 +97,7 @@ func (e *Enemy) Move() {
 
 }
 
-func (e *Enemy) UpdateTarget(players []*Player, cols []*server.CollisionObject) {
+func (e *Enemy) UpdateTarget(players []*Player, cols []*CollisionObject) {
 	minLength := float32(0)
 	minId := -1
 	for i, player := range players {

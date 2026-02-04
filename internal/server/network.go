@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
-	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/server"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/protocol"
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -76,7 +76,7 @@ func (n *Network) BroadcastGameState() {
 
 	for _, player := range clients {
 		playerData := make([]protocol.PlayerData, 0, len(clients)-1)
-		
+
 		// Sending your player data to OTHER players, not to yourself
 		for _, otherPlayer := range clients {
 			if otherPlayer.Address.String() != player.Address.String() {
@@ -138,7 +138,7 @@ func (n *Network) handleClientMessage(data []byte, addr *net.UDPAddr, updateCoun
 // LIVES IN GOROUTINE
 // TODO: Maybe refactor after "player renovation"
 func (n *Network) addClient(addr *net.UDPAddr, updateCount int64) {
-	player := &entities.Player{
+	player := &server.Player{
 		Velocity: rl.Vector3{},
 		Collider: colliders.NewCylinderCollider(
 			rl.NewVector3(0, 0, 0),
