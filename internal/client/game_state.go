@@ -57,9 +57,9 @@ func NewGameState() *GameState {
 	ambient := []float32{0.1, 0.1, 0.1, 1.0}
 	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
 
-	ghostModel, _ := assets.GlobalManager.LoadModel(assets.ModelGhost)
+	bombModel, _ := assets.GlobalManager.LoadModel(assets.ModelBomb)
 
-	enemy := client.NewEnemy(ghostModel.Data, shader)
+	enemy := client.NewEnemy(bombModel.Data, shader)
 	enemyModel := enemy.Renderable.GetModel()
 	// TODO: figure out what to do with that
 	levels.SetShaderForAllMaterials(&enemyModel, shader)
@@ -72,6 +72,9 @@ func NewGameState() *GameState {
 	// due to bug with loading model in another thread (OpenGL context is limited to one)
 	playerModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
 	fmt.Println("Player model loaded", playerModel)
+
+	itemModel, _ := assets.GlobalManager.LoadModel(assets.ModelScrew)
+	fmt.Println("Item model loaded", itemModel)
 
 	return &GameState{
 		playerAvatar: playerAvatar,
@@ -219,7 +222,8 @@ func (gs *GameState) createPlayer(id uint16, position rl.Vector3, rotation float
 func (gs *GameState) createItem(id uint8, position rl.Vector3, itemType uint8) {
 	// maybe some logging could be usefull
 	pCollider := colliders.NewCylinderCollider(position, config.PlayerRadius, config.PlayerHeight)
-	pModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
+
+	pModel, _ := assets.GlobalManager.LoadModel(assets.ModelScrew)
 	levels.SetShaderForAllMaterials(&pModel.Data, gs.shader)
 
 	itemEntity := &client.CEntity{
@@ -228,7 +232,7 @@ func (gs *GameState) createItem(id uint8, position rl.Vector3, itemType uint8) {
 		Renderable: &client.BasicRenderable{
 			Model:    pModel.Data,
 			Shader:   gs.shader,
-			Color:    rl.Blue,
+			Color:    rl.White,
 			Offset:   rl.NewVector3(0, 0, 0),
 			Rotation: 0,
 		},
