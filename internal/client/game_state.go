@@ -206,13 +206,12 @@ func (gs *GameState) UpdateRayCollision(ray colliders.Ray) {
 
 	for _, object := range gs.rooms[gs.currentRoom].Objects {
 		if object != nil {
-			for _, collider := range object.Colliders {
-				point, length := ray.GetCollisionPoint(collider)
-				if point != nil && (minLength == 0 || length < minLength) {
-					minLength = length
-					gs.rayCollisionPoint = point
-				}
+			point, length := ray.GetCollisionPoint(object.Collider)
+			if point != nil && (minLength == 0 || length < minLength) {
+				minLength = length
+				gs.rayCollisionPoint = point
 			}
+
 		}
 	}
 }

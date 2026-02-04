@@ -3,7 +3,6 @@ package client
 import (
 	"strconv"
 
-	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/client"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
@@ -141,8 +140,8 @@ func (r *Renderer) renderDebug(state *GameState) {
 	}
 }
 
-func (r *Renderer) renderCylinderSides(object *entities.Object, playerPos rl.Vector3) {
-	cylinder, ok := object.Colliders[0].(*colliders.CylinderCollider)
+func (r *Renderer) renderCylinderSides(object *client.CEntity, playerPos rl.Vector3) {
+	cylinder, ok := object.Collider.(*colliders.CylinderCollider)
 	if !ok {
 		return
 	}
@@ -158,31 +157,40 @@ func (r *Renderer) renderCylinderSides(object *entities.Object, playerPos rl.Vec
 
 	// Create temporary debug objects for rendering
 	debugCylinder1 := createDebugCylinder(drawPoint1)
-	debugCylinder1.Draw()
+	debugCylinder1.Render()
 
 	debugCylinder2 := createDebugCylinder(drawPoint2)
-	debugCylinder2.Draw()
+	debugCylinder2.Render()
 }
 
 // util functions to render cube at ray collition point
 func (r *Renderer) renderCollisionPoint(point rl.Vector3) {
-	createDebugCube(rl.Vector3Add(point, rl.NewVector3(-0.05, -0.05, -0.05)), rl.Black).Draw()
+	createDebugCube(rl.Vector3Add(point, rl.NewVector3(-0.05, -0.05, -0.05)), rl.Black).Render()
 }
 
 // cube machine
-func createDebugCube(position rl.Vector3, color rl.Color) entities.Object {
-	return entities.Object{
-		Model:     levels.NewModelFromCollider(colliders.NewCubeCollider(rl.Vector3{}, 0.1, 0.1, 0.1)),
-		DrawPoint: position,
-		Color:     color,
+func createDebugCube(position rl.Vector3, color rl.Color) client.CEntity {
+	return client.CEntity{
+		Renderable: &client.BasicRenderable{
+			Model:    levels.NewModelFromCollider(colliders.NewCubeCollider(rl.Vector3{}, 0.1, 0.1, 0.1)),
+			Color:    color,
+			Offset:   rl.NewVector3(0, 0, 0),
+			Rotation: 0,
+		},
+		Position: position,
+		Collider: colliders.NewCubeCollider(position, 0.1, 0.1, 0.1),
 	}
 }
 
 // walec factory
-func createDebugCylinder(position rl.Vector3) entities.Object {
-	return entities.Object{
-		Model:     levels.NewModelFromCollider(colliders.NewCylinderCollider(rl.Vector3{}, 0.1, 0.2)),
-		DrawPoint: position,
-		Color:     rl.Pink,
+func createDebugCylinder(position rl.Vector3) client.CEntity {
+	return client.CEntity{
+		Renderable: &client.BasicRenderable{
+			Model:    levels.NewModelFromCollider(colliders.NewCylinderCollider(rl.Vector3{}, 0.1, 0.2)),
+			Color:    rl.Pink,
+			Offset:   rl.NewVector3(0, 0, 0),
+			Rotation: 0,
+		},
+		Position: position,
 	}
 }
