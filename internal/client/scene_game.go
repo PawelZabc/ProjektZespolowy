@@ -55,7 +55,8 @@ func (s *GameScene) Update() SceneType {
 		return SceneMainMenu
 	}
 
-	if s.app.gameState != nil && s.app.gameState.playerHp <= 0 {
+	// if connected to server and received update and player hp is 0 or less, go to game over screen
+	if s.app.gameState != nil && s.app.gameState.ReceivedFirstUpdate() && s.app.gameState.playerHp <= 0 {
 		return SceneGameOver
 	}
 
