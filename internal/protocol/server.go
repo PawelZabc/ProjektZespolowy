@@ -9,9 +9,11 @@ import (
 
 type ServerData struct {
 	Players  []PlayerData
+	Items    []ItemData
 	Position rl.Vector3
 	Enemy    EnemyData
 	PlayerHp uint8
+	ItemHeld uint8
 }
 
 type PlayerData struct {
@@ -24,6 +26,12 @@ type EnemyData struct {
 	Position       rl.Vector3
 	Rotation       float32
 	AnimationFrame uint8
+}
+
+type ItemData struct {
+	Position rl.Vector2
+	Type     uint8
+	Id       uint8
 }
 
 func SerializeServerData(s ServerData) []byte {
@@ -49,6 +57,14 @@ func SerializeServerData(s ServerData) []byte {
 	binary.Write(b, binary.LittleEndian, s.Enemy.Position.Z)
 	binary.Write(b, binary.LittleEndian, s.Enemy.Rotation)
 	binary.Write(b, binary.LittleEndian, s.Enemy.AnimationFrame)
+	binary.Write(b, binary.LittleEndian, uint8(len(s.Items)))
+	for _, i := range s.Items {
+		binary.Write(b, binary.LittleEndian, i.Position.X)
+		binary.Write(b, binary.LittleEndian, i.Position.Y)
+		binary.Write(b, binary.LittleEndian, i.Type)
+		binary.Write(b, binary.LittleEndian, i.Id)
+	}
+	binary.Write(b, binary.LittleEndian, s.ItemHeld)
 
 	return b.Bytes()
 }
@@ -78,6 +94,15 @@ func DeserializeServerData(data []byte) ServerData {
 	binary.Read(b, binary.LittleEndian, &s.Enemy.Position.Z)
 	binary.Read(b, binary.LittleEndian, &s.Enemy.Rotation)
 	binary.Read(b, binary.LittleEndian, &s.Enemy.AnimationFrame)
-
+	var itemCount uint8
+	binary.Read(b, binary.LittleEndian, &itemCount)
+	s.Items = make([]ItemData, itemCount)
+	for i := 0; i < int(itemCount); i++ {
+		binary.Read(b, binary.LittleEndian, &s.Items[i].Position.X)
+		binary.Read(b, binary.LittleEndian, &s.Items[i].Position.Y)
+		binary.Read(b, binary.LittleEndian, &s.Items[i].Type)
+		binary.Read(b, binary.LittleEndian, &s.Items[i].Id)
+	}
+	binary.Read(b, binary.LittleEndian, &s.ItemHeld)
 	return s
 }
