@@ -42,16 +42,23 @@ func (r *Renderer) RenderUI(state *GameState) {
 	// TODO: Find out if rl.DrawImage would not be better for UI
 	rl.DrawTextureEx(
 		state.playerAvatar.Data,
-		rl.Vector2{X: 10, Y: 490},
+		rl.Vector2{X: 20, Y: 780},
 		0.0,  // rotation
 		0.04, // scale
 		rl.White,
 	)
 
-	r.drawTextOutlined("G demo", 10, 10, 20, rl.Black, rl.LightGray, 2)
-	r.drawTextOutlined("Player hp:"+strconv.Itoa(state.playerHp), 160, 540, 20, rl.Black, rl.White, 2)
-	r.drawTextOutlined("ItemHeld Type:"+strconv.Itoa(int(state.itemHeld)), 160, 520, 20, rl.Black, rl.White, 2)
-	r.drawHPBar(160, 570, 150, 12, state.playerHp, 100, rl.Black, rl.White)
+	var item string
+	if state.itemHeld != 0 {
+		item = "all-purpose screw"
+	} else {
+		item = "none"
+	}
+
+	r.drawTextOutlined("Raylib Game", 10, 10, 30, rl.Black, rl.LightGray, 2)
+	r.drawTextOutlined("Item: "+item, 200, 780, 30, rl.Black, rl.White, 2)
+	r.drawTextOutlined("Health: "+strconv.Itoa(state.playerHp), 200, 820, 30, rl.Black, rl.White, 2)
+	r.drawHPBar(200, 860, 150, 12, state.playerHp, 100, rl.Black, rl.White)
 
 }
 
