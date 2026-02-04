@@ -6,19 +6,37 @@ import (
 )
 
 type Actor struct {
-	Entity           CEntity
+	CEntity
 	AnimationHandler animation.AnimationHandler
 	State            state.State
+
+	animationBase animation.AnimationMap
+	lastState     state.State
 }
 
-func NewActor(entity CEntity, animationHandler animation.AnimationHandler) *Actor {
+func NewActor(entity CEntity) *Actor {
 	return &Actor{
-		Entity:           entity,
-		AnimationHandler: animationHandler,
+		CEntity:          entity,
+		AnimationHandler: animation.AnimationHandler{},
 	}
 }
 
 func (a *Actor) Render() {
-	a.AnimationHandler.Update(a.Entity.Renderable)
-	a.Entity.Render()
+	// TODO: state walking is per 20 ticks while attacking - to discover
+
+	if a.State != a.lastState {
+		if animationForState, ok := a.animationBase[a.State]; ok {
+			a.AnimationHandler.SetAnimation(animationForState)
+		}
+		a.lastState = a.State
+	}
+
+	a.AnimationHandler.Update(a.Renderable)
+	a.CEntity.Render()
+}
+
+func RenderActorsMap[T comparable](actors map[T]*Actor) {
+	for _, actor := range actors {
+		actor.Render()
+	}
 }

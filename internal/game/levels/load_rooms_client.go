@@ -7,7 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/PawelZabc/ProjektZespolowy/assets"
-	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/client"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/chewxy/math32"
@@ -17,7 +17,7 @@ import (
 func LoadRooms(shader rl.Shader) []ClientRoom {
 	rooms := make([]ClientRoom, 0, 10)
 	roomShared := Room1
-	objects := make([]*entities.Object, 0, len(roomShared.Objects))
+	objects := make([]*client.CEntity, 0, len(roomShared.Objects))
 	for _, object := range roomShared.Objects {
 		objects = append(objects, ConvertObjectSharedToClient(object, shader))
 	}
@@ -37,7 +37,7 @@ func SetShaderForAllMaterials(model *rl.Model, shader rl.Shader) {
 	}
 }
 
-func ConvertObjectSharedToClient(object *ObjectTWO, shader rl.Shader) *entities.Object {
+func ConvertObjectSharedToClient(object *ObjectTWO, shader rl.Shader) *client.CEntity {
 	var model rl.Model
 
 	drawPoint := object.DrawPoint
@@ -53,12 +53,16 @@ func ConvertObjectSharedToClient(object *ObjectTWO, shader rl.Shader) *entities.
 
 	SetShaderForAllMaterials(&model, shader)
 
-	objectClient := entities.Object{
-		Colliders: object.Colliders,
-		Model:     model,
-		// DrawPoint: object.DrawPoint,
-		DrawPoint: drawPoint,
-		Color:     GetColorFromCollider(object.Colliders[0]),
+	objectClient := client.CEntity{
+		Position: drawPoint,
+		Collider: object.Colliders[0],
+		Renderable: &client.BasicRenderable{
+			Model:    model,
+			Color:    GetColorFromCollider(object.Colliders[0]),
+			Offset:   rl.NewVector3(0, 0, 0),
+			Rotation: 0,
+			Shader:   shader,
+		},
 	}
 
 	return &objectClient
@@ -66,26 +70,6 @@ func ConvertObjectSharedToClient(object *ObjectTWO, shader rl.Shader) *entities.
 }
 
 func GetColorFromCollider(collider colliders.Collider) rl.Color {
-	// if plane, ok := collider.(*colider.PlaneCollider); ok { //check if the collider is a plane
-	// 	switch plane.Direction { //check which color to draw the plane as
-	// 	case types.DirX:
-	// 		{
-	// 			return rl.Red
-	// 		}
-	// 	case types.DirY:
-	// 		{
-	// 			return rl.Orange
-	// 		}
-	// 	case types.DirYminus:
-	// 		{
-	// 			return rl.Green
-	// 		}
-	// 	case types.DirZ:
-	// 		{
-	// 			return rl.Yellow
-	// 		}
-	// 	}
-	// }
 	return rl.White //if its not a plane color white
 }
 
@@ -97,9 +81,9 @@ func DrawRoom(room *ClientRoom) {
 	}
 }
 
-func DrawObjects(objects []*entities.Object) {
+func DrawObjects(objects []*client.CEntity) {
 	for _, object := range objects {
-		object.Draw()
+		object.Render()
 	}
 }
 

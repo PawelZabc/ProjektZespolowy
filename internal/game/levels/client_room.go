@@ -1,15 +1,15 @@
 package levels
 
 import (
-	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/client"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type ClientRoom struct {
-	Objects       []*entities.Object //objects and walls in that room
-	SharedObjects []*entities.Object //objects shared with visible rooms
-	VisibleRooms  []*ClientRoom      //rooms visible that need to be rendered while in the room
+	Objects       []*client.CEntity //objects and walls in that room
+	SharedObjects []*client.CEntity //objects shared with visible rooms
+	VisibleRooms  []*ClientRoom     //rooms visible that need to be rendered while in the room
 }
 
 // type ClientRoom struct {

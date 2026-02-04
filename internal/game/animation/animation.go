@@ -7,4 +7,5 @@ type Animation interface {
 	NextFrame()
 	Apply(r core.Renderable)
 	Finished() bool
+	Reset()
 }
