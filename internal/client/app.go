@@ -64,7 +64,7 @@ func (a *App) changeScene(sceneType SceneType) {
 	case SceneGame:
 		a.currentScene = NewGameScene(a)
 	case SceneGameOver:
-		victory := a.gameState != nil && a.gameState.playerHp > 0
+		victory := a.gameState != nil && a.gameState.progress >= 5
 		a.currentScene = NewGameOverScene(a, victory)
 	}
 
