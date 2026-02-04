@@ -24,7 +24,7 @@ type GameState struct {
 
 	// Players as clients
 	clients      Clients
-	progress     int16
+	progress     uint8
 	nextPlayerId uint16
 }
 
@@ -36,7 +36,8 @@ func NewGameState() *GameState {
 			1,
 			1,
 		),
-		Speed: 0.05,
+		Speed:  0.05,
+		Damage: 15,
 	}
 	clients := make(Clients, 2)
 
@@ -65,22 +66,30 @@ func NewGameState() *GameState {
 	// 	println(playerIp, " touched me")
 	// }
 
-	//for every item
-	item := &server.Item{Type: server.ItemRepair, Id: 0}
-
-	effect := ReturnItemPickupEffect(item, &clients)
-
-	effectObject := &server.EffectObject{
-		Effect:   effect,
-		Collider: colliders.NewCylinderCollider(rl.NewVector3(-9, 0, -9), 0.5, 1),
-		Active:   true,
+	itemsPos := []rl.Vector3{
+		rl.NewVector3(-9, 0, -9),
+		rl.NewVector3(-7, 0, -9),
+		rl.NewVector3(-5, 0, -9),
+		rl.NewVector3(-3, 0, -9),
+		rl.NewVector3(-1, 0, -9),
 	}
-	effectObjects = append(effectObjects, effectObject)
-	item.EffectObject = effectObject
-	items = append(items, item)
-	//end for every item
+	for id, pos := range itemsPos {
 
-	effect2 := ReturnItemPutdownEffect(&clients)
+		item := &server.Item{Type: server.ItemRepair, Id: uint8(id)}
+
+		effect := ReturnItemPickupEffect(item, &gameState)
+
+		effectObject := &server.EffectObject{
+			Effect:   effect,
+			Collider: colliders.NewCylinderCollider(pos, 0.5, 1),
+			Active:   true,
+		}
+		effectObjects = append(effectObjects, effectObject)
+		item.EffectObject = effectObject
+		items = append(items, item)
+	}
+
+	effect2 := ReturnItemPutdownEffect(&gameState)
 	effectObject2 := &server.EffectObject{
 		Effect:   effect2,
 		Collider: colliders.NewCubeCollider(rl.NewVector3(-3, 0, 14), 6, 3, 6),
@@ -93,9 +102,9 @@ func NewGameState() *GameState {
 	return &gameState
 }
 
-func ReturnItemPickupEffect(item *server.Item, clients *Clients) *func(playerIp string) {
+func ReturnItemPickupEffect(item *server.Item, gameState *GameState) *func(playerIp string) {
 	fun := func(playerIp string) {
-		if player, exists := (*clients)[playerIp]; exists && player.Item == nil {
+		if player, exists := (gameState.clients)[playerIp]; exists && player.Item == nil {
 			println("player", playerIp, "picked up item type", item.Type)
 			player.Item = item
 			item.EffectObject.Active = false
@@ -106,11 +115,12 @@ func ReturnItemPickupEffect(item *server.Item, clients *Clients) *func(playerIp 
 
 }
 
-func ReturnItemPutdownEffect(clients *Clients) *func(playerIp string) {
+func ReturnItemPutdownEffect(gameState *GameState) *func(playerIp string) {
 	fun := func(playerIp string) {
-		if player, exists := (*clients)[playerIp]; exists && player.Item != nil {
+		if player, exists := (gameState.clients)[playerIp]; exists && player.Item != nil {
 			println("player", playerIp, "put down item type", player.Item.Type)
-			player.Item.EffectObject.Active = true
+			// player.Item.EffectObject.Active = true
+			gameState.progress += 1
 			player.Item = nil
 		}
 
