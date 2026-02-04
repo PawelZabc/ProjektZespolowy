@@ -9,6 +9,7 @@ import (
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/client"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/levels"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/state"
 	"github.com/PawelZabc/ProjektZespolowy/internal/protocol"
@@ -19,9 +20,11 @@ type GameState struct {
 	cameraPosition rl.Vector3
 	playerAvatar   *assets.Resource[rl.Texture2D]
 	playerHp       int
+	itemHeld       uint8
 	players        map[uint16]*client.Actor // other players
 	enemy          *client.Actor            // for now only one
 
+	items       map[uint8]*client.CEntity
 	rooms       []levels.ClientRoom
 	currentRoom int
 	shader      rl.Shader
@@ -73,6 +76,7 @@ func NewGameState() *GameState {
 	return &GameState{
 		playerAvatar: playerAvatar,
 		players:      make(map[uint16]*client.Actor),
+		items:        make(map[uint8]*client.CEntity),
 		enemy:        enemy,
 		rooms:        rooms,
 		shader:       shader,
@@ -94,6 +98,7 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 
 	gs.cameraPosition = data.Position
 	gs.playerHp = int(data.PlayerHp)
+	gs.itemHeld = data.ItemHeld
 
 	gs.enemy.Position = data.Enemy.Position
 	gs.enemy.SetRotation(-data.Enemy.Rotation) // ASK (to Pabox): why minus tho?
@@ -117,6 +122,26 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	for id := range gs.players {
 		if !updatedPlayers[id] {
 			delete(gs.players, id)
+		}
+	}
+
+	updatedItems := make(map[uint8]bool)
+
+	for _, itemData := range data.Items {
+		if entity, exists := gs.items[itemData.Id]; exists {
+			// update existing
+			entity.SetPosition(physics.GetVector3FromXZ(itemData.Position))
+		} else {
+			// new player
+			gs.createItem(itemData.Id, physics.GetVector3FromXZ(itemData.Position), itemData.Type)
+		}
+		updatedItems[itemData.Id] = true
+	}
+
+	// if item wasnt updated,its no longer at the server so delete it
+	for id := range gs.items {
+		if !updatedItems[id] {
+			delete(gs.items, id)
 		}
 	}
 }
@@ -171,6 +196,8 @@ func createLights(shader rl.Shader) []client.Light {
 func (gs *GameState) createPlayer(id uint16, position rl.Vector3, rotation float32) {
 	// maybe some logging could be usefull
 	pCollider := colliders.NewCylinderCollider(position, config.PlayerRadius, config.PlayerHeight)
+	//Possibly position should be set to Vector3.ZERO since position is stored in the entity
+	//Currently doesnt matter since its not used
 	pModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
 	levels.SetShaderForAllMaterials(&pModel.Data, gs.shader)
 
@@ -187,6 +214,27 @@ func (gs *GameState) createPlayer(id uint16, position rl.Vector3, rotation float
 	}
 
 	gs.players[id] = client.NewActor(*playerEntity)
+}
+
+func (gs *GameState) createItem(id uint8, position rl.Vector3, itemType uint8) {
+	// maybe some logging could be usefull
+	pCollider := colliders.NewCylinderCollider(position, config.PlayerRadius, config.PlayerHeight)
+	pModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
+	levels.SetShaderForAllMaterials(&pModel.Data, gs.shader)
+
+	itemEntity := &client.CEntity{
+		Position: position,
+		Collider: pCollider,
+		Renderable: &client.BasicRenderable{
+			Model:    pModel.Data,
+			Shader:   gs.shader,
+			Color:    rl.Blue,
+			Offset:   rl.NewVector3(0, 0, 0),
+			Rotation: 0,
+		},
+	}
+
+	gs.items[id] = itemEntity
 }
 
 func (gs *GameState) GetCurrentRoom() *levels.ClientRoom {
