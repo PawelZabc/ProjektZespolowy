@@ -29,7 +29,7 @@ type Light struct {
 	colorLoc   int32
 }
 
-const maxLightsCount = 10
+const maxLightsCount = 100
 
 var lightCount = 0
 

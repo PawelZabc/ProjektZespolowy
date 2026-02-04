@@ -111,7 +111,7 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 
 	if gs.progress != data.Progress {
 		for range data.Progress - gs.progress {
-			pModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
+			pModel, _ := assets.GlobalManager.LoadModel(assets.ModelScrew)
 			levels.SetShaderForAllMaterials(&pModel.Data, gs.shader)
 
 			itemEntity := &client.CEntity{
@@ -119,7 +119,7 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 				Renderable: &client.BasicRenderable{
 					Model:    pModel.Data,
 					Shader:   gs.shader,
-					Color:    rl.Blue,
+					Color:    rl.White,
 					Offset:   rl.NewVector3(0, 0, 0),
 					Rotation: 0,
 				},
@@ -203,11 +203,24 @@ func createLights(shader rl.Shader) []client.Light {
 
 		rl.NewVector3(20, cellingHeight, 16),
 		rl.NewVector3(-20, cellingHeight, 16),
+
 		rl.NewVector3(20, cellingHeight, -5),
 		rl.NewVector3(-20, cellingHeight, -5),
 
 		rl.NewVector3(20, cellingHeight, -20),
+
 		rl.NewVector3(10, cellingHeight, -17),
+
+		rl.NewVector3(0, cellingHeight, 15),
+
+		rl.NewVector3(5, cellingHeight, 18),
+		rl.NewVector3(5, cellingHeight, 28),
+		rl.NewVector3(12, cellingHeight, 18),
+		rl.NewVector3(12, cellingHeight, 28),
+		rl.NewVector3(-5, cellingHeight, 18),
+		rl.NewVector3(-5, cellingHeight, 28),
+		rl.NewVector3(-12, cellingHeight, 18),
+		rl.NewVector3(-12, cellingHeight, 28),
 	}
 
 	lights := make([]client.Light, 0, len(positions))

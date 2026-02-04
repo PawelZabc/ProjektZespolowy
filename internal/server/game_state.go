@@ -68,10 +68,10 @@ func NewGameState() *GameState {
 
 	itemsPos := []rl.Vector3{
 		rl.NewVector3(-9, 0, -9),
-		rl.NewVector3(-7, 0, -9),
-		rl.NewVector3(-5, 0, -9),
-		rl.NewVector3(-3, 0, -9),
-		rl.NewVector3(-1, 0, -9),
+		rl.NewVector3(-12, 0, 19),
+		rl.NewVector3(-5, 0, 29),
+		rl.NewVector3(11, 0, -17),
+		rl.NewVector3(21, 0, -21),
 	}
 	for id, pos := range itemsPos {
 
