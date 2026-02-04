@@ -3,7 +3,8 @@ package server
 type ItemType uint8
 
 const (
-	ItemRepair = iota
+	ItemNone = iota
+	ItemRepair
 )
 
 type Item struct {
