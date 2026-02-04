@@ -8,6 +8,7 @@ import (
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/entities/server"
+	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics"
 	"github.com/PawelZabc/ProjektZespolowy/internal/game/physics/colliders"
 	"github.com/PawelZabc/ProjektZespolowy/internal/protocol"
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -73,6 +74,17 @@ func (n *Network) SetUpdateCount(count int64) {
 func (n *Network) BroadcastGameState() {
 	clients := n.gameState.clients
 	enemy := n.gameState.enemy
+	itemData := make([]protocol.ItemData, 0, len(n.gameState.items))
+	for _, item := range n.gameState.items {
+		if item.EffectObject.Active {
+			itemData = append(itemData, protocol.ItemData{
+				Position: physics.GetVector2XZ(item.EffectObject.Collider.GetPosition()),
+				Type:     uint8(item.Type),
+				Id:       item.Id,
+			})
+
+		}
+	}
 
 	for _, player := range clients {
 		playerData := make([]protocol.PlayerData, 0, len(clients)-1)
@@ -87,12 +99,20 @@ func (n *Network) BroadcastGameState() {
 				})
 			}
 		}
+		var itemHeld server.ItemType
+		if player.Item != nil {
+			itemHeld = player.Item.Type
+		} else {
+			itemHeld = server.ItemNone
+		}
 
 		serverData := protocol.ServerData{
 			Position: player.GetPosition(),
 			Players:  playerData,
+			Items:    itemData,
 			Enemy:    protocol.EnemyData{Position: enemy.Collider.GetPosition(), Rotation: enemy.RotationX, AnimationFrame: uint8(enemy.State)},
 			PlayerHp: player.Hp,
+			ItemHeld: uint8(itemHeld),
 		}
 
 		data := protocol.SerializeServerData(serverData)
