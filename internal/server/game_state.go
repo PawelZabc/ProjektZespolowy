@@ -66,13 +66,13 @@ func NewGameState() *GameState {
 	// }
 
 	//for every item
-	item := &server.Item{Type: server.ItemRepair}
+	item := &server.Item{Type: server.ItemRepair, Id: 0}
 
 	effect := ReturnItemPickupEffect(item, &clients)
 
 	effectObject := &server.EffectObject{
 		Effect:   effect,
-		Collider: colliders.NewCubeCollider(rl.NewVector3(-10, 0, -10), 2, 2, 2),
+		Collider: colliders.NewCylinderCollider(rl.NewVector3(-9, 0, -9), 0.5, 1),
 		Active:   true,
 	}
 	effectObjects = append(effectObjects, effectObject)
@@ -83,7 +83,7 @@ func NewGameState() *GameState {
 	effect2 := ReturnItemPutdownEffect(&clients)
 	effectObject2 := &server.EffectObject{
 		Effect:   effect2,
-		Collider: colliders.NewCubeCollider(rl.NewVector3(0, 0, 0), 2, 2, 2),
+		Collider: colliders.NewCubeCollider(rl.NewVector3(-3, 0, 14), 6, 3, 6),
 		Active:   true,
 	}
 	effectObjects = append(effectObjects, effectObject2)

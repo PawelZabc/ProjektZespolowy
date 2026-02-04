@@ -25,6 +25,9 @@ func (r *Renderer) RenderWorld(state *GameState) {
 	// rendering 3d world
 	levels.DrawRoom(state.GetCurrentRoom())
 	client.RenderActorsMap(state.GetPlayers())
+	for _, item := range state.items {
+		item.Render()
+	}
 
 	state.GetEnemy().Render()
 	r.renderLights(state.lights)
@@ -47,6 +50,7 @@ func (r *Renderer) RenderUI(state *GameState) {
 
 	r.drawTextOutlined("G demo", 10, 10, 20, rl.Black, rl.LightGray, 2)
 	r.drawTextOutlined("Player hp:"+strconv.Itoa(state.playerHp), 160, 540, 20, rl.Black, rl.White, 2)
+	r.drawTextOutlined("ItemHeld Type:"+strconv.Itoa(int(state.itemHeld)), 160, 520, 20, rl.Black, rl.White, 2)
 	r.drawHPBar(160, 570, 150, 12, state.playerHp, 100, rl.Black, rl.White)
 
 }
