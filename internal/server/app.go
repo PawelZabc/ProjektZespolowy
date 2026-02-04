@@ -70,6 +70,14 @@ func (a *App) updatePlayers() {
 			player.PushbackFrom(*obj.Collider)
 		}
 
+		for _, obj := range a.gameState.effectObjects {
+			// player.PushbackFrom(obj.Collider)
+
+			if obj.Active && player.Collider.CollidesWith(obj.Collider) {
+				(*obj.Effect)(player.Address.String())
+			}
+		}
+
 		player.PushbackFrom(a.gameState.enemy.Collider)
 	}
 }

@@ -125,38 +125,44 @@ func (gs *GameState) GetShader() rl.Shader {
 	return gs.shader
 }
 
+func createLightAt(shader rl.Shader, position rl.Vector3) client.Light {
+	light := client.NewLight(
+		client.LightTypePoint,
+		position,               // light position
+		rl.NewVector3(0, 0, 0), // target (unused for point light)
+		rl.White,               // light color
+		shader,
+	)
+	light.Enabled = 1 // ON is default
+	light.UpdateValues()
+
+	return light
+}
+
 func createLights(shader rl.Shader) []client.Light {
-	var lights []client.Light
+	const cellingHeight float32 = 2.9
 
-	light1 := client.NewLight(
-		client.LightTypePoint,
-		rl.NewVector3(0, 2.9, 0), // light position
-		rl.NewVector3(0, 0, 0),   // target (unused for point light)
-		rl.White,                 // light color
-		shader,
-	)
-	light1.UpdateValues()
+	// if you want to add more than 10 lights change the limit in the shader and lights.go
+	positions := []rl.Vector3{
+		rl.NewVector3(5, cellingHeight, -5),
+		rl.NewVector3(5, cellingHeight, 5),
+		rl.NewVector3(-5, cellingHeight, 5),
+		rl.NewVector3(-5, cellingHeight, -5),
 
-	light2 := client.NewLight(
-		client.LightTypePoint,
-		rl.NewVector3(5, 2.9, -5), // light position
-		rl.NewVector3(0, 0, 0),    // target (unused for point light)
-		rl.White,                  // light color
-		shader,
-	)
-	light2.UpdateValues()
+		rl.NewVector3(20, cellingHeight, 16),
+		rl.NewVector3(-20, cellingHeight, 16),
+		rl.NewVector3(20, cellingHeight, -5),
+		rl.NewVector3(-20, cellingHeight, -5),
 
-	light3 := client.NewLight(
-		client.LightTypePoint,
-		rl.NewVector3(5, 2.9, 5), // light position
-		rl.NewVector3(0, 0, 0),   // target (unused for point light)
-		rl.White,                 // light color
-		shader,
-	)
-	light3.Enabled = 1 // ON is default
-	light3.UpdateValues()
+		rl.NewVector3(20, cellingHeight, -20),
+		rl.NewVector3(10, cellingHeight, -17),
+	}
 
-	lights = append(lights, light1, light2, light3)
+	lights := make([]client.Light, 0, len(positions))
+
+	for _, pos := range positions {
+		lights = append(lights, createLightAt(shader, pos))
+	}
 
 	return lights
 }

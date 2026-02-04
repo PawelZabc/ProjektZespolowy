@@ -11,8 +11,9 @@ type SEntity interface {
 }
 
 type EffectObject struct {
-	Collider *colliders.Collider
-	Effect   *func()
+	Collider colliders.Collider
+	Effect   *func(playerIp string)
+	Active   bool
 }
 
 type CollisionObject struct {

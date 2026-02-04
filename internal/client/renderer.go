@@ -120,9 +120,9 @@ func (r *Renderer) drawHPBar(
 }
 
 func (r Renderer) renderLights(lights []client.Light) {
-	rl.DrawSphereEx(lights[0].Position, 0.2, 8, 8, rl.White)
-	rl.DrawSphereEx(lights[1].Position, 0.2, 8, 8, rl.White)
-	rl.DrawSphereEx(lights[2].Position, 0.2, 8, 8, rl.White)
+	for _, light := range lights {
+		rl.DrawSphereEx(light.Position, 0.2, 8, 8, rl.White)
+	}
 }
 
 // here you can put rendering basically everything, it can be turn off by debugMode flag
