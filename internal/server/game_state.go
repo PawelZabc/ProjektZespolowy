@@ -24,7 +24,7 @@ type GameState struct {
 
 	// Players as clients
 	clients      Clients
-	progress     int16
+	progress     uint8
 	nextPlayerId uint16
 }
 
@@ -68,7 +68,7 @@ func NewGameState() *GameState {
 	//for every item
 	item := &server.Item{Type: server.ItemRepair, Id: 0}
 
-	effect := ReturnItemPickupEffect(item, &clients)
+	effect := ReturnItemPickupEffect(item, &gameState)
 
 	effectObject := &server.EffectObject{
 		Effect:   effect,
@@ -80,7 +80,7 @@ func NewGameState() *GameState {
 	items = append(items, item)
 	//end for every item
 
-	effect2 := ReturnItemPutdownEffect(&clients)
+	effect2 := ReturnItemPutdownEffect(&gameState)
 	effectObject2 := &server.EffectObject{
 		Effect:   effect2,
 		Collider: colliders.NewCubeCollider(rl.NewVector3(-3, 0, 14), 6, 3, 6),
@@ -93,9 +93,9 @@ func NewGameState() *GameState {
 	return &gameState
 }
 
-func ReturnItemPickupEffect(item *server.Item, clients *Clients) *func(playerIp string) {
+func ReturnItemPickupEffect(item *server.Item, gameState *GameState) *func(playerIp string) {
 	fun := func(playerIp string) {
-		if player, exists := (*clients)[playerIp]; exists && player.Item == nil {
+		if player, exists := (gameState.clients)[playerIp]; exists && player.Item == nil {
 			println("player", playerIp, "picked up item type", item.Type)
 			player.Item = item
 			item.EffectObject.Active = false
@@ -106,11 +106,12 @@ func ReturnItemPickupEffect(item *server.Item, clients *Clients) *func(playerIp 
 
 }
 
-func ReturnItemPutdownEffect(clients *Clients) *func(playerIp string) {
+func ReturnItemPutdownEffect(gameState *GameState) *func(playerIp string) {
 	fun := func(playerIp string) {
-		if player, exists := (*clients)[playerIp]; exists && player.Item != nil {
+		if player, exists := (gameState.clients)[playerIp]; exists && player.Item != nil {
 			println("player", playerIp, "put down item type", player.Item.Type)
 			player.Item.EffectObject.Active = true
+			gameState.progress += 1
 			player.Item = nil
 		}
 
