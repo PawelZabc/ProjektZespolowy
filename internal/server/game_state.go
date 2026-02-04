@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"maps"
 	"slices"
 
@@ -96,7 +97,7 @@ func NewGameState() *GameState {
 func ReturnItemPickupEffect(item *server.Item, clients *Clients) *func(playerIp string) {
 	fun := func(playerIp string) {
 		if player, exists := (*clients)[playerIp]; exists && player.Item == nil {
-			println("player", playerIp, "picked up item type", item.Type)
+			log.Printf("player %s picked up item type %d", playerIp, item.Type)
 			player.Item = item
 			item.EffectObject.Active = false
 		}
@@ -109,7 +110,7 @@ func ReturnItemPickupEffect(item *server.Item, clients *Clients) *func(playerIp 
 func ReturnItemPutdownEffect(clients *Clients) *func(playerIp string) {
 	fun := func(playerIp string) {
 		if player, exists := (*clients)[playerIp]; exists && player.Item != nil {
-			println("player", playerIp, "put down item type", player.Item.Type)
+			log.Printf("player %s put down item type %d", playerIp, player.Item.Type)
 			player.Item.EffectObject.Active = true
 			player.Item = nil
 		}
