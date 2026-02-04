@@ -32,11 +32,13 @@ type GameState struct {
 	shader      rl.Shader
 	lights      []client.Light
 
-	rayCollisionPoint *rl.Vector3
-	mu                sync.RWMutex
+	rayCollisionPoint   *rl.Vector3
+	receivedFirstUpdate bool // to check if connected to server and received update
+	mu                  sync.RWMutex
 }
 
 func NewGameState() *GameState {
+	client.ResetLightCount() // reset light counter
 
 	playerAvatar, err := assets.GlobalManager.LoadTexture(assets.TexturePlayer)
 	if err != nil {
@@ -101,6 +103,7 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
 
+	gs.receivedFirstUpdate = true
 	gs.cameraPosition = data.Position
 	gs.playerHp = int(data.PlayerHp)
 	gs.itemHeld = data.ItemHeld
@@ -177,6 +180,13 @@ func (gs *GameState) GetShader() rl.Shader {
 	return gs.shader
 }
 
+func (gs *GameState) ReceivedFirstUpdate() bool {
+	// its in goroutine so we need to lock it
+	gs.mu.RLock()
+	defer gs.mu.RUnlock()
+	return gs.receivedFirstUpdate
+}
+
 func createLightAt(shader rl.Shader, position rl.Vector3) client.Light {
 	light := client.NewLight(
 		client.LightTypePoint,
@@ -236,7 +246,7 @@ func (gs *GameState) createPlayer(id uint16, position rl.Vector3, rotation float
 			Shader:   gs.shader,
 			Color:    rl.White,
 			Offset:   rl.NewVector3(0, 0, 0),
-			Rotation: 0,
+			Rotation: rotation * rl.Rad2deg,
 		},
 	}
 

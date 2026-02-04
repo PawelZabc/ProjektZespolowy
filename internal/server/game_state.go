@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"maps"
 	"slices"
 
@@ -118,8 +119,7 @@ func ReturnItemPickupEffect(item *server.Item, gameState *GameState) *func(playe
 func ReturnItemPutdownEffect(gameState *GameState) *func(playerIp string) {
 	fun := func(playerIp string) {
 		if player, exists := (gameState.clients)[playerIp]; exists && player.Item != nil {
-			println("player", playerIp, "put down item type", player.Item.Type)
-			// player.Item.EffectObject.Active = true
+			log.Printf("player %s put down item type %d", playerIp, player.Item.Type)
 			gameState.progress += 1
 			player.Item = nil
 		}

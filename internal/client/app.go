@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/PawelZabc/ProjektZespolowy/internal/config"
@@ -16,39 +15,60 @@ type App struct {
 	input     *Input
 	renderer  *Renderer
 	running   bool
+
+	currentScene     Scene
+	currentSceneType SceneType
 }
 
 func NewApp(cfg config.ClientConfig) *App {
 	return &App{
-		config:  cfg,
-		running: false,
+		config:           cfg,
+		running:          false,
+		currentSceneType: SceneMainMenu,
 	}
 }
 
 func (a *App) Run() error {
-	a.initWindow() // init raylib
-
+	a.initWindow()    // init raylib
 	defer a.cleanup() // end with cleanup
 
-	// init components like input, network, state, etc..
-	if err := a.initComponents(); err != nil {
-		return fmt.Errorf("failed to initialize components: %w", err)
-	}
-
-	// goroutine to reveive messages and data from server
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go a.network.StartReceiving(ctx)
-
-	// initial connection to server
-	if err := a.network.SendHello(); err != nil {
-		return fmt.Errorf("failed to connect to server: %w", err)
-	}
+	// Start with main menu
+	a.changeScene(SceneMainMenu)
 
 	a.running = true
-	a.gameLoop()
+
+	for !rl.WindowShouldClose() && a.running {
+		nextScene := a.currentScene.Update()
+
+		if nextScene != a.currentSceneType {
+			a.changeScene(nextScene)
+		}
+
+		a.currentScene.Render()
+	}
 
 	return nil
+}
+
+func (a *App) changeScene(sceneType SceneType) {
+	// Exit current scene
+	if a.currentScene != nil {
+		a.currentScene.OnExit()
+	}
+
+	// Create and enter new scene
+	a.currentSceneType = sceneType
+	switch sceneType {
+	case SceneMainMenu:
+		a.currentScene = NewMainMenuScene(a)
+	case SceneGame:
+		a.currentScene = NewGameScene(a)
+	case SceneGameOver:
+		victory := a.gameState != nil && a.gameState.playerHp > 0
+		a.currentScene = NewGameOverScene(a, victory)
+	}
+
+	a.currentScene.OnEnter()
 }
 
 func (a *App) initWindow() {
@@ -71,13 +91,13 @@ func (a *App) initComponents() error {
 	return nil
 }
 
-// simple game loop
-func (a *App) gameLoop() {
-	for !rl.WindowShouldClose() && a.running {
-		a.update()
-		a.render()
-	}
-}
+// // simple game loop
+// func (a *App) gameLoop() {
+// 	for !rl.WindowShouldClose() && a.running {
+// 		a.update()
+// 		a.render()
+// 	}
+// }
 
 // Handles all game logic updates
 func (a *App) update() {
