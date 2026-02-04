@@ -24,6 +24,8 @@ type GameState struct {
 	players        map[uint16]*client.Actor // other players
 	enemy          *client.Actor            // for now only one
 
+	progress uint8
+
 	items       map[uint8]*client.CEntity
 	rooms       []levels.ClientRoom
 	currentRoom int
@@ -59,9 +61,9 @@ func NewGameState() *GameState {
 	ambient := []float32{0.1, 0.1, 0.1, 1.0}
 	rl.SetShaderValue(shader, ambientLoc, ambient, rl.ShaderUniformVec4)
 
-	ghostModel, _ := assets.GlobalManager.LoadModel(assets.ModelGhost)
+	bombModel, _ := assets.GlobalManager.LoadModel(assets.ModelBomb)
 
-	enemy := client.NewEnemy(ghostModel.Data, shader)
+	enemy := client.NewEnemy(bombModel.Data, shader)
 	enemyModel := enemy.Renderable.GetModel()
 	// TODO: figure out what to do with that
 	levels.SetShaderForAllMaterials(&enemyModel, shader)
@@ -74,6 +76,9 @@ func NewGameState() *GameState {
 	// due to bug with loading model in another thread (OpenGL context is limited to one)
 	playerModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
 	fmt.Println("Player model loaded", playerModel)
+
+	itemModel, _ := assets.GlobalManager.LoadModel(assets.ModelScrew)
+	fmt.Println("Item model loaded", itemModel)
 
 	return &GameState{
 		playerAvatar: playerAvatar,
@@ -106,6 +111,28 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	gs.enemy.Position = data.Enemy.Position
 	gs.enemy.SetRotation(-data.Enemy.Rotation) // ASK (to Pabox): why minus tho?
 	gs.enemy.State = state.State(data.Enemy.AnimationFrame)
+
+	if gs.progress != data.Progress {
+		for range data.Progress - gs.progress {
+			pModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
+			levels.SetShaderForAllMaterials(&pModel.Data, gs.shader)
+
+			itemEntity := &client.CEntity{
+				Position: rl.NewVector3(3-(float32(gs.progress+1)), -0.5, 19),
+				Renderable: &client.BasicRenderable{
+					Model:    pModel.Data,
+					Shader:   gs.shader,
+					Color:    rl.Blue,
+					Offset:   rl.NewVector3(0, 0, 0),
+					Rotation: 0,
+				},
+			}
+			gs.rooms[0].Objects = append(gs.rooms[0].Objects, itemEntity)
+			gs.progress += 1
+
+		}
+
+	}
 
 	updatedPlayers := make(map[uint16]bool)
 
@@ -229,7 +256,8 @@ func (gs *GameState) createPlayer(id uint16, position rl.Vector3, rotation float
 func (gs *GameState) createItem(id uint8, position rl.Vector3, itemType uint8) {
 	// maybe some logging could be usefull
 	pCollider := colliders.NewCylinderCollider(position, config.PlayerRadius, config.PlayerHeight)
-	pModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
+
+	pModel, _ := assets.GlobalManager.LoadModel(assets.ModelScrew)
 	levels.SetShaderForAllMaterials(&pModel.Data, gs.shader)
 
 	itemEntity := &client.CEntity{
@@ -238,7 +266,7 @@ func (gs *GameState) createItem(id uint8, position rl.Vector3, itemType uint8) {
 		Renderable: &client.BasicRenderable{
 			Model:    pModel.Data,
 			Shader:   gs.shader,
-			Color:    rl.Blue,
+			Color:    rl.White,
 			Offset:   rl.NewVector3(0, 0, 0),
 			Rotation: 0,
 		},

@@ -14,6 +14,7 @@ type ServerData struct {
 	Enemy    EnemyData
 	PlayerHp uint8
 	ItemHeld uint8
+	Progress uint8
 }
 
 type PlayerData struct {
@@ -65,6 +66,7 @@ func SerializeServerData(s ServerData) []byte {
 		binary.Write(b, binary.LittleEndian, i.Id)
 	}
 	binary.Write(b, binary.LittleEndian, s.ItemHeld)
+	binary.Write(b, binary.LittleEndian, s.Progress)
 
 	return b.Bytes()
 }
@@ -104,5 +106,6 @@ func DeserializeServerData(data []byte) ServerData {
 		binary.Read(b, binary.LittleEndian, &s.Items[i].Id)
 	}
 	binary.Read(b, binary.LittleEndian, &s.ItemHeld)
+	binary.Read(b, binary.LittleEndian, &s.Progress)
 	return s
 }
