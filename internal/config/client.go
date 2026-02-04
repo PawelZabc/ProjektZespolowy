@@ -22,6 +22,6 @@ func DefaultClientConfig() ClientConfig {
 		WindowHeight: 900,
 		WindowTitle:  "Raylib Game - By G-Team",
 		TargetFPS:    60,
-		DebugMode:    true,
+		DebugMode:    false,
 	}
 }
