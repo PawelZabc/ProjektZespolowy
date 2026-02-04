@@ -118,7 +118,7 @@ func ReturnItemPickupEffect(item *server.Item, gameState *GameState) *func(playe
 
 func ReturnItemPutdownEffect(gameState *GameState) *func(playerIp string) {
 	fun := func(playerIp string) {
-		if player, exists := (*clients)[playerIp]; exists && player.Item != nil {
+		if player, exists := (gameState.clients)[playerIp]; exists && player.Item != nil {
 			log.Printf("player %s put down item type %d", playerIp, player.Item.Type)
 			gameState.progress += 1
 			player.Item = nil
