@@ -18,6 +18,7 @@ type Enemy struct {
 	State          state.State
 	AttackTimer    uint8
 	AttackCooldown uint8
+	Damage         uint8
 }
 
 func (e *Enemy) Attack(players []*Player, colliders []*CollisionObject) {
@@ -35,7 +36,7 @@ func (e *Enemy) Attack(players []*Player, colliders []*CollisionObject) {
 					}
 				}
 				if direct {
-					player.Hit(5)
+					player.Hit(e.Damage)
 					log.Println("Ała! Nie w szczepionkę!")
 				}
 			}
