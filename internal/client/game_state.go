@@ -24,6 +24,8 @@ type GameState struct {
 	players        map[uint16]*client.Actor // other players
 	enemy          *client.Actor            // for now only one
 
+	progress uint8
+
 	items       map[uint8]*client.CEntity
 	rooms       []levels.ClientRoom
 	currentRoom int
@@ -103,6 +105,28 @@ func (gs *GameState) UpdateFromServer(data protocol.ServerData) {
 	gs.enemy.Position = data.Enemy.Position
 	gs.enemy.SetRotation(-data.Enemy.Rotation) // ASK (to Pabox): why minus tho?
 	gs.enemy.State = state.State(data.Enemy.AnimationFrame)
+
+	if gs.progress != data.Progress {
+		for range data.Progress - gs.progress {
+			pModel, _ := assets.GlobalManager.LoadModel(assets.ModelPlayer)
+			levels.SetShaderForAllMaterials(&pModel.Data, gs.shader)
+
+			itemEntity := &client.CEntity{
+				Position: rl.NewVector3(3-(float32(gs.progress+1)), -0.5, 19),
+				Renderable: &client.BasicRenderable{
+					Model:    pModel.Data,
+					Shader:   gs.shader,
+					Color:    rl.Blue,
+					Offset:   rl.NewVector3(0, 0, 0),
+					Rotation: 0,
+				},
+			}
+			gs.rooms[0].Objects = append(gs.rooms[0].Objects, itemEntity)
+			gs.progress += 1
+
+		}
+
+	}
 
 	updatedPlayers := make(map[uint16]bool)
 
