@@ -33,6 +33,11 @@ const maxLightsCount = 10
 
 var lightCount = 0
 
+// Resets the global light counter. Use this when starting a new game.
+func ResetLightCount() {
+	lightCount = 0
+}
+
 func NewLight(
 	lightType LightType,
 	position, target rl.Vector3,
