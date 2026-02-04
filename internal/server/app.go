@@ -61,6 +61,9 @@ func (a *App) updateLoop() {
 func (a *App) updatePlayers() {
 	players := a.gameState.GetClientsAsPlayerSlice()
 	for _, player := range players {
+		if player.Hp == 0 {
+			continue
+		}
 		player.Velocity.Y -= config.Gravity
 
 		player.Move()
