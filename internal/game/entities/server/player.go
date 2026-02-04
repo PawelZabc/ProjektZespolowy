@@ -55,6 +55,13 @@ func (p *Player) PushbackFrom(collider colliders.Collider) {
 	}
 }
 
+func (p *Player) DropItem() {
+	if p.Item != nil {
+		p.Item.EffectObject.Collider.SetPosition(p.GetPosition())
+		p.Item.EffectObject.Active = true
+	}
+}
+
 // Changes player position based on data received from client
 // LIVES IN GOROUTINE
 func (p *Player) ProcessInput(data protocol.ClientData) {
@@ -85,6 +92,7 @@ func (p *Player) ProcessInput(data protocol.ClientData) {
 func (p *Player) Hit(damage uint8) {
 	if p.Hp <= damage {
 		p.Hp = 0
+		p.DropItem()
 	} else {
 		p.Hp -= damage
 	}
