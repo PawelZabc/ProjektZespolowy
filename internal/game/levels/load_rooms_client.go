@@ -163,16 +163,17 @@ func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height 
 			count++
 		}
 	}
-	walls := make([]colliders.Collider, len(Changes))
-	skipped := 0
-	for i, change := range Changes {
+
+	walls := make([]colliders.Collider, 0, count)
+
+	for _, change := range Changes {
+
 		if change.Axis == physics.DirX {
 			change.Axis = physics.DirZ
 		} else {
 			change.Axis = physics.DirX
 		}
 
-		var object colliders.PlaneCollider
 		if change.Value < 0 {
 			if change.Axis == physics.DirX {
 				StartPoint = rl.Vector3Add(StartPoint, rl.NewVector3(0, 0, change.Value))
@@ -181,10 +182,13 @@ func CreateRoomWallsFromChanges(StartPoint rl.Vector3, Changes []Change, Height 
 			}
 		}
 		if !change.Skip {
-			object = *colliders.NewPlaneCollider(StartPoint, math32.Abs(change.Value), Height, change.Axis)
-			walls[i-skipped] = &object
-		} else {
-			skipped += 1
+			wall := colliders.NewPlaneCollider(
+				StartPoint,
+				math32.Abs(change.Value),
+				Height,
+				change.Axis,
+			)
+			walls = append(walls, wall)
 		}
 		if change.Value > 0 {
 			if change.Axis == physics.DirX {
