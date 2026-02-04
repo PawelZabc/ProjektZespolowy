@@ -18,9 +18,9 @@ func DefaultClientConfig() ClientConfig {
 	return ClientConfig{
 		ServerIP:     "127.0.0.1",
 		ServerPort:   DefaultPort,
-		WindowWidth:  800,
-		WindowHeight: 600,
-		WindowTitle:  "MGT - Maybe Game Title",
+		WindowWidth:  1600,
+		WindowHeight: 900,
+		WindowTitle:  "Raylib Game - By G-Team",
 		TargetFPS:    60,
 		DebugMode:    true,
 	}
