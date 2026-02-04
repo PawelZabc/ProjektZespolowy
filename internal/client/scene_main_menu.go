@@ -62,13 +62,13 @@ func (s *MainMenuScene) Render() {
 
 	// Press ENTER to start
 	startText := "Press ENTER to start"
-	startWidth := rl.MeasureText(startText, 24)
-	rl.DrawText(startText, centerX-startWidth/2, 200, 24, rl.Green)
+	startWidth := rl.MeasureText(startText, 30)
+	rl.DrawText(startText, centerX-startWidth/2, 200, 30, rl.Green)
 
 	// ESC to exit
 	exitText := "ESC - Exit"
-	exitWidth := rl.MeasureText(exitText, 16)
-	rl.DrawText(exitText, centerX-exitWidth/2, 240, 16, rl.Gray)
+	exitWidth := rl.MeasureText(exitText, 24)
+	rl.DrawText(exitText, centerX-exitWidth/2, 240, 24, rl.Gray)
 
 	// Bottom: Server status and player list
 	bottomY := screenHeight - 120
@@ -83,27 +83,27 @@ func (s *MainMenuScene) Render() {
 		statusText = fmt.Sprintf("Server %s:%d - Offline", s.app.config.ServerIP, s.app.config.ServerPort)
 		statusColor = rl.Red
 	}
-	rl.DrawText(statusText, 20, bottomY, 16, statusColor)
+	rl.DrawText(statusText, 20, bottomY, 24, statusColor)
 
 	// Player list
 	if s.serverBrowser.Online {
 		playerCount := len(s.serverBrowser.Players)
 		if playerCount == 0 {
-			rl.DrawText("No players online", 20, bottomY+22, 14, rl.Gray)
+			rl.DrawText("No players online", 20, bottomY+22, 20, rl.Gray)
 		} else {
 			playerText := fmt.Sprintf("Players online: %d", playerCount)
-			rl.DrawText(playerText, 20, bottomY+22, 14, rl.LightGray)
+			rl.DrawText(playerText, 20, bottomY+22, 20, rl.LightGray)
 
 			// List player IDs (compact)
 			x := int32(20)
 			for i, p := range s.serverBrowser.Players {
 				if i >= 8 {
-					rl.DrawText("...", x, bottomY+44, 14, rl.Gray)
+					rl.DrawText("...", x, bottomY+44, 20, rl.Gray)
 					break
 				}
 				idText := fmt.Sprintf("#%d", p.ID)
-				rl.DrawText(idText, x, bottomY+44, 14, rl.LightGray)
-				x += int32(rl.MeasureText(idText, 14)) + 15
+				rl.DrawText(idText, x, bottomY+44, 20, rl.LightGray)
+				x += int32(rl.MeasureText(idText, 20)) + 15
 			}
 		}
 	}
