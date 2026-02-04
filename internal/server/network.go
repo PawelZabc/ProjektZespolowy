@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"sync/atomic"
 
@@ -37,8 +38,7 @@ func NewNetwork(port int, gameState *GameState) (*Network, error) {
 		return nil, fmt.Errorf("failed to listen on port %d: %w", port, err)
 	}
 
-	// TODO: move to logging
-	fmt.Printf("Server listening on port %d\n", port)
+	log.Printf("Server listening on port %d\n", port)
 
 	return &Network{
 		conn:        conn,
@@ -56,7 +56,7 @@ func (n *Network) StartReceiving(ctx context.Context) {
 		default:
 			bytesRead, clientAddr, err := n.conn.ReadFromUDP(n.buffer)
 			if err != nil {
-				fmt.Printf("Read error: %v\n", err)
+				log.Printf("Read error: %v\n", err)
 				continue
 			}
 
@@ -118,7 +118,7 @@ func (n *Network) BroadcastGameState() {
 		data := protocol.SerializeServerData(serverData)
 		_, err := n.conn.WriteToUDP(data, player.Address)
 		if err != nil {
-			fmt.Printf("Failed to send to %s: %v\n", player.Address, err)
+			log.Printf("Failed to send to %s: %v\n", player.Address, err)
 		}
 	}
 }
@@ -127,7 +127,7 @@ func (n *Network) BroadcastGameState() {
 func (n *Network) RemoveDisconnectedClients(currentUpdate int64) {
 	for addr, player := range n.gameState.clients {
 		if currentUpdate-player.LastMessage > config.ClientTimeoutTicks {
-			fmt.Printf("Client disconnected: %s (ID: %d)\n", addr, player.Id)
+			log.Printf("Client disconnected: %s (ID: %d)\n", addr, player.Id)
 			delete(n.gameState.clients, addr)
 		}
 	}
@@ -137,6 +137,12 @@ func (n *Network) RemoveDisconnectedClients(currentUpdate int64) {
 // If the input addr is known it updates player data
 // LIVES IN GOROUTINE
 func (n *Network) handleClientMessage(data []byte, addr *net.UDPAddr, updateCount int64) {
+	// Check if this is a PING request (server browser)
+	if protocol.IsPingMessage(data) {
+		n.handlePing(addr)
+		return
+	}
+
 	addrStr := addr.String()
 
 	player, exists := n.gameState.clients[addrStr]
@@ -175,11 +181,27 @@ func (n *Network) addClient(addr *net.UDPAddr, updateCount int64) {
 	n.gameState.clients[addr.String()] = player
 	n.gameState.nextPlayerId++
 
-	fmt.Printf("New client connected: %s (ID: %d)\n", addr.String(), player.Id)
+	log.Printf("New client connected: %s (ID: %d)\n", addr.String(), player.Id)
 }
 
 func (n *Network) Close() {
 	if n.conn != nil {
 		n.conn.Close()
+	}
+}
+
+// handlePing responds to server browser ping requests with player list
+func (n *Network) handlePing(addr *net.UDPAddr) {
+	// collect players
+	playerIDs := make([]uint16, 0, len(n.gameState.clients))
+	for _, player := range n.gameState.clients {
+		playerIDs = append(playerIDs, player.Id)
+	}
+
+	// send response with players
+	response := protocol.SerializePong(playerIDs)
+	_, err := n.conn.WriteToUDP(response, addr)
+	if err != nil {
+		log.Printf("Failed to send PONG to %s: %v\n", addr, err)
 	}
 }
